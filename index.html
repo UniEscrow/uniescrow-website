@@ -1,84 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UniEscrow — Secure USDT Escrow on Tron</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#0a0a0a;color:#fff}
-nav{padding:20px 40px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1a1a1a}
-.logo{font-size:22px;font-weight:700;color:#00d4aa}
-.hero{text-align:center;padding:80px 20px;max-width:700px;margin:0 auto}
-.badge{display:inline-block;border:1px solid #00d4aa;color:#00d4aa;padding:6px 16px;border-radius:20px;font-size:12px;margin-bottom:24px}
-h1{font-size:48px;font-weight:700;line-height:1.2;margin-bottom:20px}
-h1 span{color:#00d4aa}
-.sub{font-size:18px;color:#888;margin-bottom:40px;line-height:1.6}
-.btn{display:inline-block;background:#00d4aa;color:#000;padding:14px 32px;border-radius:10px;font-size:16px;font-weight:700;text-decoration:none;margin:6px}
-.btn2{display:inline-block;border:1px solid #333;color:#fff;padding:14px 32px;border-radius:10px;font-size:16px;text-decoration:none;margin:6px}
-.stats{display:flex;justify-content:center;gap:48px;padding:40px 20px;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;flex-wrap:wrap}
-.stat-num{font-size:32px;font-weight:700;color:#00d4aa}
-.stat-label{font-size:13px;color:#666;margin-top:4px}
-.features{padding:60px 20px;max-width:900px;margin:0 auto}
-.features h2{text-align:center;font-size:32px;margin-bottom:40px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
-.card{background:#111;border:1px solid #222;border-radius:14px;padding:24px}
-.icon{font-size:28px;margin-bottom:12px}
-.card h3{font-size:16px;margin-bottom:8px}
-.card p{font-size:14px;color:#666;line-height:1.6}
-.how{padding:60px 20px;max-width:680px;margin:0 auto}
-.how h2{text-align:center;font-size:32px;margin-bottom:40px}
-.step{display:flex;gap:20px;padding:20px 0;border-bottom:1px solid #1a1a1a}
-.step:last-child{border-bottom:none}
-.num{width:36px;height:36px;border-radius:50%;background:#00d4aa;color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
-.step h3{font-size:15px;font-weight:600;margin-bottom:4px}
-.step p{font-size:13px;color:#666;line-height:1.5}
-.contract{text-align:center;padding:40px 20px;border-top:1px solid #1a1a1a}
-.contract p{color:#666;margin-bottom:8px;font-size:13px}
-.addr{font-family:monospace;color:#00d4aa;font-size:13px;word-break:break-all}
-.contract a{color:#0099ff;font-size:13px}
-footer{text-align:center;padding:30px;color:#444;font-size:13px;border-top:1px solid #1a1a1a}
-</style>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2575.7">
+  <style type="text/css">
+    body {background-color: #0a0a0a}
+  </style>
 </head>
 <body>
-<nav><div class="logo">UniEscrow</div><span style="color:#888;font-size:13px;border:1px solid #333;padding:5px 12px;border-radius:20px">🟢 Live on Tron</span></nav>
-<div class="hero">
-<div class="badge">✅ Smart contract live on Tron blockchain</div>
-<h1>Secure <span>USDT Escrow</span><br>for Everyone</h1>
-<p class="sub">Lock USDT safely between buyer and seller.<br>No bank. No middleman. Just code.</p>
-<a href="#how" class="btn">How it works</a>
-<a href="#contract" class="btn2">View contract</a>
-</div>
-<div class="stats">
-<div class="stat"><div class="stat-num">2%</div><div class="stat-label">Platform fee</div></div>
-<div class="stat"><div class="stat-num">3%</div><div class="stat-label">With dispute</div></div>
-<div class="stat"><div class="stat-num">USDT</div><div class="stat-label">TRC-20 Tron</div></div>
-<div class="stat"><div class="stat-num">24/7</div><div class="stat-label">Always on</div></div>
-</div>
-<div class="features">
-<h2>Why UniEscrow?</h2>
-<div class="grid">
-<div class="card"><div class="icon">🔒</div><h3>Funds locked safely</h3><p>USDT held by smart contract. Released only when both agree.</p></div>
-<div class="card"><div class="icon">⚡</div><h3>Fast and cheap</h3><p>Tron confirms in seconds. Costs less than $0.01.</p></div>
-<div class="card"><div class="icon">⚖️</div><h3>Video disputes</h3><p>Disagreement? Join a video call with a mediator. Fair every time.</p></div>
-<div class="card"><div class="icon">👁️</div><h3>Fully transparent</h3><p>Every transaction on the public blockchain forever.</p></div>
-<div class="card"><div class="icon">🌍</div><h3>Works anywhere</h3><p>No bank needed. Just a Tron wallet and USDT.</p></div>
-<div class="card"><div class="icon">🤝</div><h3>Milestone payments</h3><p>Pay step by step as work gets done.</p></div>
-</div>
-</div>
-<div class="how" id="how">
-<h2>How it works</h2>
-<div class="step"><div class="num">1</div><div><h3>Buyer creates escrow</h3><p>Set amount, seller address and milestones. Done in seconds.</p></div></div>
-<div class="step"><div class="num">2</div><div><h3>Buyer locks USDT</h3><p>Funds held safely in the contract. Nobody can touch them.</p></div></div>
-<div class="step"><div class="num">3</div><div><h3>Seller does the work</h3><p>Seller delivers and marks it complete.</p></div></div>
-<div class="step"><div class="num">4</div><div><h3>Funds released!</h3><p>Buyer approves — seller gets USDT instantly. You earn 2%.</p></div></div>
-</div>
-<div class="contract" id="contract">
-<p>Smart contract on Tron blockchain</p>
-<div class="addr">TH1T3g29FFJYMJckutWnrUaDTDifV9vFYY</div>
-<br><br>
-<a href="https://nile.tronscan.org/#/contract/TH1T3g29FFJYMJckutWnrUaDTDifV9vFYY" target="_blank">View on Tronscan →</a>
-</div>
-<footer>Built on Tron · USDT TRC-20 · UniEscrow 2026</footer>
 </body>
 </html>
