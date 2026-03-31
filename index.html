@@ -1,15 +1,214 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.7">
-  <style type="text/css">
-    body {background-color: #0a0a0a}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlobalEscrowX - Trusted Crypto Escrow</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;color:#fff;font-family:-apple-system,sans-serif;overflow-x:hidden}
+canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.scan{position:fixed;left:0;width:100%;height:1px;background:rgba(0,255,170,.3);z-index:2;animation:sd 6s linear infinite;pointer-events:none}
+@keyframes sd{0%{top:0}100%{top:100%}}
+.w{position:relative;z-index:3}
+nav{display:flex;justify-content:space-between;align-items:center;padding:16px 36px;border-bottom:1px solid rgba(0,255,170,.12);background:rgba(0,0,0,.9);position:sticky;top:0;z-index:100}
+.logo{font-size:22px;font-weight:800;letter-spacing:2px;color:#00ffaa;text-shadow:0 0 30px rgba(0,255,170,.8)}
+.logo span{color:#fff;text-shadow:none}
+.nb{background:transparent;color:#00ffaa;border:1px solid #00ffaa;padding:9px 22px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:2px;transition:all .3s}
+.nb:hover{background:#00ffaa;color:#000}
+.ticker{overflow:hidden;padding:9px 0;border-bottom:1px solid rgba(0,255,170,.08)}
+.tt{display:flex;gap:60px;white-space:nowrap;animation:ts 35s linear infinite;font-size:10px;letter-spacing:1.5px;color:#00ffaa}
+@keyframes ts{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ti{display:flex;align-items:center;gap:8px}
+.td{width:5px;height:5px;border-radius:50%;background:#00ffaa;box-shadow:0 0 8px #00ffaa;animation:bl 1.5s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
+.hero{min-height:90vh;display:flex;align-items:center;justify-content:space-between;padding:60px 40px;gap:40px}
+.hl{flex:1;max-width:580px}
+.hb{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(0,255,170,.25);color:#00ffaa;padding:7px 16px;border-radius:3px;font-size:10px;margin-bottom:24px;letter-spacing:2px;background:rgba(0,255,170,.04)}
+.bd{width:6px;height:6px;border-radius:50%;background:#00ffaa;animation:bl 1s infinite;box-shadow:0 0 8px #00ffaa}
+h1{font-size:52px;font-weight:800;line-height:1.05;margin-bottom:18px}
+.g{color:#00ffaa;text-shadow:0 0 40px rgba(0,255,170,.5)}
+.b{color:#4d9fff}
+.hs{font-size:14px;color:#444;line-height:1.9;margin-bottom:36px}
+.cr{display:flex;gap:14px}
+.bm{background:#00ffaa;color:#000;padding:14px 36px;border-radius:4px;font-size:12px;font-weight:800;cursor:pointer;border:none;letter-spacing:2px;transition:all .3s;position:relative;overflow:hidden}
+.bm:hover{box-shadow:0 0 40px rgba(0,255,170,.8);transform:translateY(-2px)}
+.bo{background:transparent;color:#fff;padding:14px 36px;border-radius:4px;font-size:12px;cursor:pointer;border:1px solid #1a1a1a;letter-spacing:2px;transition:all .3s}
+.bo:hover{border-color:#00ffaa;color:#00ffaa}
+.hr{flex-shrink:0;position:relative;width:320px;height:320px}
+.ring{position:absolute;border-radius:50%;border:1px solid rgba(0,255,170,.15)}
+.r1{width:320px;height:320px;top:0;left:0;animation:rot 22s linear infinite}
+.r2{width:255px;height:255px;top:32px;left:32px;border-color:rgba(77,159,255,.12);animation:rot 14s linear infinite reverse}
+.r3{width:190px;height:190px;top:65px;left:65px;animation:rot 9s linear infinite}
+@keyframes rot{from{transform:rotateY(0)rotateX(25deg)}to{transform:rotateY(360deg)rotateX(25deg)}}
+.gc{position:absolute;width:130px;height:130px;top:95px;left:95px;border-radius:50%;background:#001508;border:2px solid #00ffaa;display:flex;align-items:center;justify-content:center;font-size:42px;box-shadow:0 0 40px rgba(0,255,170,.3)}
+.gd{position:absolute;width:10px;height:10px;border-radius:50%}
+.gd1{top:14px;left:50%;background:#00ffaa;box-shadow:0 0 12px #00ffaa;animation:gdo 4s linear infinite}
+.gd2{top:50%;right:14px;background:#4d9fff;box-shadow:0 0 12px #4d9fff;animation:gdo 3s linear infinite 1s}
+.gd3{bottom:14px;left:35%;background:#ff66aa;box-shadow:0 0 12px #ff66aa;animation:gdo 5s linear infinite 2s}
+@keyframes gdo{0%,100%{transform:scale(1)}50%{transform:scale(2.5);opacity:.2}}
+.pop{position:absolute;padding:6px 12px;border-radius:3px;font-size:9px;letter-spacing:1px;animation:pi 5s ease-in-out infinite;white-space:nowrap}
+.p1{top:18px;left:-50px;background:rgba(0,255,170,.08);border:1px solid rgba(0,255,170,.3);color:#00ffaa}
+.p2{top:120px;right:-60px;background:rgba(77,159,255,.08);border:1px solid rgba(77,159,255,.3);color:#4d9fff;animation-delay:2s}
+.p3{bottom:28px;left:-30px;background:rgba(255,102,170,.08);border:1px solid rgba(255,102,170,.3);color:#ff66aa;animation-delay:4s}
+@keyframes pi{0%{opacity:0;transform:translateY(8px)}15%{opacity:1;transform:translateY(0)}85%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(0,255,170,.08);border-bottom:1px solid rgba(0,255,170,.08)}
+.stat{padding:28px 20px;text-align:center;border-right:1px solid rgba(0,255,170,.06)}
+.stat:last-child{border-right:none}
+.sn{font-size:30px;font-weight:800;color:#00ffaa;margin-bottom:4px;text-shadow:0 0 20px rgba(0,255,170,.4)}
+.sl{font-size:10px;color:#222;letter-spacing:2px;text-transform:uppercase}
+.sec{padding:70px 40px;max-width:1020px;margin:0 auto}
+.sl2{font-size:9px;font-weight:800;letter-spacing:3px;color:#00ffaa;text-transform:uppercase;margin-bottom:10px}
+.sec h2{font-size:30px;font-weight:800;margin-bottom:8px}
+.ss{font-size:13px;color:#2a2a2a;margin-bottom:32px}
+.cg{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.coin{border:1px solid #0d0d0d;border-radius:10px;padding:16px 10px 14px;text-align:center;cursor:pointer;transition:all .4s}
+.coin:hover{border-color:rgba(0,255,170,.5);transform:translateY(-6px);box-shadow:0 10px 40px rgba(0,255,170,.15)}
+.coin.live{border-color:rgba(0,255,170,.4);background:rgba(0,255,170,.03);animation:lp 3s ease-in-out infinite}
+@keyframes lp{0%,100%{box-shadow:0 0 10px rgba(0,255,170,.1)}50%{box-shadow:0 0 25px rgba(0,255,170,.3)}}
+.cl{width:38px;height:38px;border-radius:50%;margin:0 auto 10px;overflow:hidden}
+.cl img{width:38px;height:38px;border-radius:50%}
+.cn{font-size:11px;font-weight:700;margin-bottom:2px}
+.ct{font-size:10px;color:#2a2a2a;margin-bottom:7px}
+.cb{font-size:9px;padding:3px 8px;border-radius:3px;font-weight:700;text-transform:uppercase}
+.clive{background:rgba(0,255,170,.12);color:#00ffaa;border:1px solid rgba(0,255,170,.4)}
+.csoon{background:rgba(255,255,255,.03);color:#222;border:1px solid #111}
+.cc{font-size:9px;color:#1a1a1a;margin-top:4px;text-transform:uppercase}
+.fg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.feat{border:1px solid #0d0d0d;border-radius:10px;padding:22px;transition:all .4s}
+.feat:hover{border-color:rgba(0,255,170,.25);transform:translateY(-3px)}
+.fi{font-size:22px;margin-bottom:12px;display:block}
+.feat h3{font-size:13px;font-weight:700;margin-bottom:6px}
+.feat p{font-size:12px;color:#2a2a2a;line-height:1.7}
+.steps{display:flex;flex-direction:column}
+.step{display:flex;gap:18px;padding:22px 0;border-bottom:1px solid #080808;transition:all .3s}
+.step:last-child{border-bottom:none}
+.step:hover{padding-left:8px}
+.snum{width:32px;height:32px;border-radius:4px;background:rgba(0,255,170,.06);border:1px solid rgba(0,255,170,.2);color:#00ffaa;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0}
+.step h3{font-size:14px;font-weight:700;margin-bottom:4px}
+.step p{font-size:12px;color:#2a2a2a;line-height:1.5}
+.feg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.fc{border:1px solid #0d0d0d;border-radius:10px;padding:26px;text-align:center;transition:all .4f}
+.fc:hover{border-color:rgba(0,255,170,.3);transform:translateY(-4px)}
+.fp{font-size:42px;font-weight:800;color:#00ffaa;margin-bottom:6px}
+.fl{font-size:10px;color:#222;letter-spacing:2px;text-transform:uppercase}
+.tg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tr{border:1px solid #0d0d0d;border-radius:10px;padding:22px;text-align:center;transition:all .4s}
+.tr:hover{border-color:rgba(0,255,170,.3);transform:translateY(-3px)}
+.ti2{font-size:26px;margin-bottom:10px;display:block}
+.tr h3{font-size:13px;font-weight:700;margin-bottom:6px}
+.tr p{font-size:12px;color:#2a2a2a;line-height:1.5}
+.cb2{border:1px solid rgba(0,255,170,.15);border-radius:10px;padding:28px;margin:0 40px;text-align:center;background:rgba(0,255,170,.015)}
+.cb2 p{font-size:10px;color:#2a2a2a;margin-bottom:8px;letter-spacing:2px;text-transform:uppercase}
+.ca{font-family:monospace;font-size:13px;color:#00ffaa;word-break:break-all;margin-bottom:12px}
+.ca2{color:#4d9fff;font-size:11px;letter-spacing:2px;text-decoration:none}
+footer{text-align:center;padding:28px;border-top:1px solid #080808;color:#111;font-size:10px;margin-top:50px;letter-spacing:2px}
+</style>
 </head>
 <body>
-</body>
-</html>
+<canvas id="bg"></canvas>
+<div class="scan"></div>
+<div class="w">
+<nav><div class="logo">Global<span>EscrowX</span></div><button class="nb">Launch App</button></nav>
+<div class="ticker"><div class="tt">
+<div class="ti"><div class="td"></div>ESCROW 4821 - 500 USDT LOCKED - TRON</div>
+<div class="ti"><div class="td"></div>ESCROW 4820 - 0.05 BTC RELEASED</div>
+<div class="ti"><div class="td"></div>ESCROW 4819 - 1200 USDC LOCKED</div>
+<div class="ti"><div class="td"></div>ESCROW 4818 - 800 XRP RELEASED</div>
+<div class="ti"><div class="td"></div>ESCROW 4817 - 3000 USDT LOCKED</div>
+<div class="ti"><div class="td"></div>ESCROW 4821 - 500 USDT LOCKED - TRON</div>
+<div class="ti"><div class="td"></div>ESCROW 4820 - 0.05 BTC RELEASED</div>
+<div class="ti"><div class="td"></div>ESCROW 4819 - 1200 USDC LOCKED</div>
+</div></div>
+<div class="hero">
+<div class="hl">
+<div class="hb"><div class="bd"></div>10 CURRENCIES - 6 BLOCKCHAINS - LIVE NOW</div>
+<h1>The Worlds Most<br><span class="g">Trusted</span> <span class="b">Crypto</span><br>Escrow Platform</h1>
+<p class="hs">Lock any major cryptocurrency safely between buyer and seller anywhere on Earth. No bank. No middleman. Just code.</p>
+<div class="cr"><button class="bm">Start Escrow Now</button><button class="bo">View Contract</button></div>
+</div>
+<div class="hr">
+<div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+<div class="gc">&#127757;</div>
+<div class="gd gd1"></div><div class="gd gd2"></div><div class="gd gd3"></div>
+<div class="pop p1">+500 USDT LOCKED</div>
+<div class="pop p2">+0.05 BTC RELEASED</div>
+<div class="pop p3">+800 XRP LOCKED</div>
+</div>
+</div>
+<div class="stats">
+<div class="stat"><div class="sn" id="c1">0</div><div class="sl">Currencies</div></div>
+<div class="stat"><div class="sn">2%</div><div class="sl">Platform Fee</div></div>
+<div class="stat"><div class="sn">0 USD</div><div class="sl">Lost to Fraud</div></div>
+<div class="stat"><div class="sn">24/7</div><div class="sl">Always On</div></div>
+</div>
+<div class="sec">
+<div class="sl2">Supported currencies</div>
+<h2>10 currencies. 6 blockchains.</h2>
+<p class="ss">Use any major crypto. More launching every month.</p>
+<div class="cg">
+<div class="coin live"><div class="cl"><img src="https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/usdt.svg"></div><div class="cn">Tether</div><div class="ct">USDT</div><div class="cb clive">LIVE NOW</div><div class="cc">Tron TRC-20</div></div>
+<div class="coin"><div class="cl"><img src="https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/usdc.svg"></div><div class="cn">USD Coin</div><div class="ct">USDC</div><div class="cb csoon">Coming Soon</div><div class="cc">Ethereum</div></div>
+<div class="coin"><div class="cl"><img src="https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/xrp.svg"></div><div class="cn">XRP</div><div class="ct">XRP</div><div class="cb csoon">Coming Soon</div><div class="cc">XRP Ledger</div></div>
+<div class="coin"><div class="cl"><img src="https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/btc.svg"></div><div class="cn">Bitcoin</div><div class="ct">BTC</div><div class="cb csoon">Coming Soon</div><div class="cc">Bitcoin</div></div>
+<div class="coin"><div class="cl"><img src="https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/sol.svg"></div><div class="cn">Solana</div><div class="ct">SOL</div><div class="cb csoon">Coming Soon</div><div class="cc">Solana</div></div>
+<div class="coin"><div class="cl"><img src="https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/trx.svg"></div><div class="cn">TRON</div><div class="ct">TRX</div><div class="cb csoon">Coming Soon</div><div class="cc">Tron</div></div>
+<div class="coin"><div class="cl"><img src="https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/eth.svg"></div><div class="cn">Ethereum</div><div class="ct">ETH</div><div class="cb csoon">Coming Soon</div><div class="cc">Ethereum</div></div>
+<div class="coin"><div class="cl"><img src="https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/bnb.svg"></div><div class="cn">BNB</div><div class="ct">BNB</div><div class="cb csoon">Coming Soon</div><div class="cc">BNB Chain</div></div>
+<div class="coin"><div class="cl"><img src="https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/xlm.svg"></div><div class="cn">Stellar</div><div class="ct">XLM</div><div class="cb csoon">Coming Soon</div><div class="cc">Stellar</div></div>
+<div class="coin"><div class="cl" style="background:rgba(0,104,255,.1);display:flex;align-items:center;justify-content:center;font-size:20px">P</div><div class="cn">PayPal USD</div><div class="ct">PYUSD</div><div class="cb csoon">Coming Soon</div><div class="cc">Ethereum</div></div>
+</div></div>
+<div class="sec" style="padding-top:0">
+<div class="sl2">Features</div><h2>Built for trust</h2>
+<div class="fg">
+<div class="feat"><span class="fi">&#128274;</span><h3>Funds locked safely</h3><p>Held by smart contract. Released only when both agree.</p></div>
+<div class="feat"><span class="fi">&#9889;</span><h3>Near-instant speed</h3><p>Tron confirms in 3 seconds. Under 0.01 USD per transaction.</p></div>
+<div class="feat"><span class="fi">&#128249;</span><h3>Video dispute resolution</h3><p>Live video call with a mediator. Fair outcome every time.</p></div>
+<div class="feat"><span class="fi">&#128065;</span><h3>Fully transparent</h3><p>Every escrow on the public blockchain forever.</p></div>
+<div class="feat"><span class="fi">&#127757;</span><h3>Works anywhere</h3><p>No bank. No KYC. Just a crypto wallet.</p></div>
+<div class="feat"><span class="fi">&#127919;</span><h3>Milestone payments</h3><p>Pay step by step as work gets done.</p></div>
+</div></div>
+<div class="sec" style="padding-top:0">
+<div class="sl2">How it works</div><h2>4 steps. Done.</h2>
+<div class="steps">
+<div class="step"><div class="snum">01</div><div><h3>Buyer creates escrow</h3><p>Choose currency, enter seller address and amount.</p></div></div>
+<div class="step"><div class="snum">02</div><div><h3>Buyer locks funds</h3><p>Crypto held safely in smart contract. Nobody can touch it.</p></div></div>
+<div class="step"><div class="snum">03</div><div><h3>Seller completes work</h3><p>Delivers and marks milestone done. Buyer reviews.</p></div></div>
+<div class="step"><div class="snum">04</div><div><h3>Funds released instantly</h3><p>Buyer approves. Crypto sent in seconds. 2 percent fee deducted.</p></div></div>
+</div></div>
+<div class="sec" style="padding-top:0">
+<div class="sl2">Pricing</div><h2>Simple honest fees</h2>
+<div class="feg">
+<div class="fc"><div class="fp">2%</div><div class="fl">Standard Release</div></div>
+<div class="fc"><div class="fp">3%</div><div class="fl">With Video Dispute</div></div>
+<div class="fc"><div class="fp">0%</div><div class="fl">Expired Refund</div></div>
+</div></div>
+<div class="sec" style="padding-top:0">
+<div class="sl2">Trust</div><h2>Why people trust GlobalEscrowX</h2>
+<div class="tg">
+<div class="tr"><span class="ti2">&#9935;</span><h3>On-chain contract</h3><p>Code runs on blockchain. Nobody can change or stop it.</p></div>
+<div class="tr"><span class="ti2">&#9878;</span><h3>Human mediators</h3><p>Real people on video calls resolve every dispute fairly.</p></div>
+<div class="tr"><span class="ti2">&#128272;</span><h3>Non-custodial</h3><p>We never hold your funds. The smart contract does.</p></div>
+</div></div>
+<div class="cb2">
+<p>Verified smart contract on Tron blockchain</p>
+<div class="ca">TH1T3g29FFJYMJckutWnrUaDTDifV9vFYY</div>
+<a class="ca2" href="https://nile.tronscan.org/#/contract/TH1T3g29FFJYMJckutWnrUaDTDifV9vFYY" target="_blank">View on Tronscan</a>
+</div>
+<footer>BUILT ON TRON BLOCKCHAIN - USDT TRC-20 - GLOBALESCROWX 2026 - GLOBALESCROWX.COM</footer>
+</div>
+<script>
+const c=document.getElementById("bg"),x=c.getContext("2d");
+function rs(){c.width=window.innerWidth;c.height=window.innerHeight}rs();
+window.addEventListener("resize",rs);
+const pts=Array.from({length:180},()=>({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:Math.random()*1.2+.2,o:Math.random()*.5+.1,col:Math.random()>.7?"0,255,170":"77,159,255"}));
+function draw(){
+x.fillStyle="rgba(0,0,0,0.05)";x.fillRect(0,0,c.width,c.height);
+pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=c.width;if(p.x>c.width)p.x=0;if(p.y<0)p.y=c.height;if(p.y>c.height)p.y=0;x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fillStyle="rgba("+p.col+","+p.o+")";x.fill();});
+pts.forEach((p,i)=>{pts.slice(i+1).forEach(q=>{const d=Math.hypot(p.x-q.x,p.y-q.y);if(d<100){x.beginPath();x.moveTo(p.x,p.y);x.lineTo(q.x,q.y);x.strokeStyle="rgba(0,255,170,"+(0.05*(1-d/100))+")";x.lineWidth=.5;x.stroke();}});});
+requestAnimationFrame(draw);}
+draw();
+const el=document.getElementById("c1");let n=0;
+const ci=setInterval(()=>{n++;el.textContent=n;if(n>=10)clearInterval(ci);},200);
+</script>
+</body></html>
