@@ -6,113 +6,108 @@
 <title>GlobalEscrowX — Dashboard</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;color:#fff;font-family:-apple-system,sans-serif;display:grid;grid-template-columns:200px 1fr;min-height:100vh}
-.sidebar{background:#050a05;border-right:1px solid rgba(0,255,170,.1);padding:20px 0;display:flex;flex-direction:column;position:fixed;width:200px;height:100vh}
-.logo{font-size:16px;font-weight:800;color:#00ffaa;letter-spacing:2px;padding:0 18px 20px;border-bottom:1px solid rgba(0,255,170,.08);text-shadow:0 0 20px rgba(0,255,170,.5)}
-.logo span{color:#fff;text-shadow:none}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 18px;font-size:12px;color:#444;cursor:pointer;transition:all .2s;border-left:2px solid transparent;text-decoration:none}
-.nav-item:hover{color:#00ffaa;background:rgba(0,255,170,.03);border-left-color:rgba(0,255,170,.3)}
-.nav-item.active{color:#00ffaa;background:rgba(0,255,170,.05);border-left-color:#00ffaa}
-.nav-section{padding:14px 0}
-.nav-label{font-size:9px;letter-spacing:2px;color:#1a1a1a;text-transform:uppercase;padding:0 18px;margin-bottom:6px}
-.wallet-box{margin:auto 12px 0;background:rgba(0,255,170,.04);border:1px solid rgba(0,255,170,.1);border-radius:8px;padding:12px}
-.wallet-label{font-size:9px;letter-spacing:2px;color:#00ffaa;text-transform:uppercase;margin-bottom:4px}
-.wallet-addr{font-family:monospace;font-size:10px;color:#333}
-.wallet-bal{font-size:15px;font-weight:800;color:#00ffaa;margin-top:6px}
-.main{margin-left:200px;background:#000;min-height:100vh}
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;border-bottom:1px solid rgba(0,255,170,.08);background:rgba(0,0,0,.95);position:sticky;top:0;z-index:10}
-.page-title{font-size:13px;font-weight:700;letter-spacing:1px}
-.connect-btn{background:#00ffaa;color:#000;border:none;padding:8px 18px;border-radius:4px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:1px}
-.content{padding:24px}
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
-.stat-card{background:#050a05;border:1px solid #0d1a0d;border-radius:10px;padding:16px}
-.sc-label{font-size:9px;color:#1a1a1a;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
-.sc-num{font-size:24px;font-weight:800;color:#00ffaa;text-shadow:0 0 15px rgba(0,255,170,.3)}
-.sc-sub{font-size:9px;color:#1a1a1a;margin-top:4px}
-.create-card{background:#050a05;border:1px solid rgba(0,255,170,.15);border-radius:10px;padding:20px;margin-bottom:20px}
-.card-title{font-size:11px;font-weight:700;letter-spacing:1px;color:#00ffaa;margin-bottom:16px}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-.form-group{display:flex;flex-direction:column;gap:5px}
-.fl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#444}
-.fi{background:#000;border:1px solid #111;border-radius:4px;padding:9px 12px;font-size:12px;color:#fff;outline:none;font-family:inherit;transition:border-color .2s}
-.fi:focus{border-color:rgba(0,255,170,.3)}
-.fi::placeholder{color:#1a1a1a}
-.fee-row{background:rgba(0,255,170,.03);border:1px solid rgba(0,255,170,.08);border-radius:6px;padding:12px;display:flex;gap:20px;margin-bottom:12px}
-.fee-item{font-size:11px;color:#333}
-.fee-item span{color:#00ffaa;font-weight:700}
-.submit-btn{background:#00ffaa;color:#000;border:none;padding:11px 28px;border-radius:4px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:1px;transition:all .3s}
-.submit-btn:hover{box-shadow:0 0 24px rgba(0,255,170,.4);transform:translateY(-1px)}
-.section-title{font-size:11px;font-weight:700;letter-spacing:1px;color:#00ffaa;margin-bottom:14px}
-.escrow-table{width:100%;border-collapse:collapse;margin-bottom:24px}
-.escrow-table th{font-size:9px;letter-spacing:2px;color:#1a1a1a;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid #0d0d0d;text-align:left}
-.escrow-table td{padding:14px;border-bottom:1px solid #080808;font-size:12px;color:#555}
-.escrow-table tr:hover td{background:rgba(0,255,170,.02)}
-.badge{display:inline-block;font-size:9px;padding:3px 8px;border-radius:3px;font-weight:700;letter-spacing:1px}
-.b-active{background:rgba(77,159,255,.1);color:#4d9fff;border:1px solid rgba(77,159,255,.3)}
-.b-funded{background:rgba(0,255,170,.1);color:#00ffaa;border:1px solid rgba(0,255,170,.3)}
-.b-done{background:#080808;color:#333;border:1px solid #111}
-.action-link{color:#00ffaa;font-size:10px;cursor:pointer;letter-spacing:.5px}
+body{background:#050a05;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh}
 .scan{position:fixed;left:0;width:100%;height:1px;background:rgba(0,255,170,.2);z-index:999;animation:sd 8s linear infinite;pointer-events:none}
 @keyframes sd{0%{top:0}100%{top:100%}}
+nav{background:#000;border-bottom:1px solid rgba(0,255,170,.15);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.logo{font-size:20px;font-weight:800;color:#00ffaa;letter-spacing:2px;text-shadow:0 0 20px rgba(0,255,170,.6)}
+.logo span{color:#fff;text-shadow:none}
+.nav-links{display:flex;gap:6px}
+.nav-link{padding:7px 16px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:1px;text-decoration:none;transition:all .2s;border:1px solid transparent;color:#444}
+.nav-link:hover{color:#00ffaa;border-color:rgba(0,255,170,.2)}
+.nav-link.active{background:rgba(0,255,170,.1);color:#00ffaa;border-color:rgba(0,255,170,.3)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.wallet-info{font-family:monospace;font-size:11px;color:#00ffaa;background:rgba(0,255,170,.06);border:1px solid rgba(0,255,170,.15);padding:6px 12px;border-radius:4px}
+.connect-btn{background:#00ffaa;color:#000;border:none;padding:8px 20px;border-radius:4px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:1px;transition:all .3s}
+.connect-btn:hover{box-shadow:0 0 20px rgba(0,255,170,.5)}
+.container{max-width:1100px;margin:0 auto;padding:28px 32px}
+.page-header{margin-bottom:24px}
+.page-title{font-size:22px;font-weight:800;letter-spacing:1px;margin-bottom:4px}
+.page-sub{font-size:13px;color:#2a2a2a;letter-spacing:.5px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+.stat{background:#000;border:1px solid #0d1a0d;border-radius:12px;padding:20px;transition:all .3s}
+.stat:hover{border-color:rgba(0,255,170,.25)}
+.stat-label{font-size:10px;color:#1a1a1a;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.stat-num{font-size:28px;font-weight:800;color:#00ffaa;text-shadow:0 0 15px rgba(0,255,170,.3)}
+.stat-sub{font-size:11px;color:#1a1a1a;margin-top:5px}
+.card{background:#000;border:1px solid rgba(0,255,170,.15);border-radius:12px;padding:24px;margin-bottom:20px}
+.card-title{font-size:13px;font-weight:700;letter-spacing:1px;color:#00ffaa;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#555}
+.form-input{background:#050a05;border:1px solid #111;border-radius:6px;padding:11px 14px;font-size:13px;color:#fff;outline:none;font-family:inherit;transition:border-color .2s}
+.form-input:focus{border-color:rgba(0,255,170,.4)}
+.form-input::placeholder{color:#1a1a1a}
+.fee-bar{background:rgba(0,255,170,.04);border:1px solid rgba(0,255,170,.1);border-radius:8px;padding:14px 18px;display:flex;gap:28px;margin-bottom:18px;flex-wrap:wrap}
+.fee-item{font-size:12px;color:#333}
+.fee-item span{color:#00ffaa;font-weight:700;margin-left:4px}
+.create-btn{background:#00ffaa;color:#000;border:none;padding:12px 32px;border-radius:6px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:1px;transition:all .3s}
+.create-btn:hover{box-shadow:0 0 28px rgba(0,255,170,.5);transform:translateY(-1px)}
+.section-title{font-size:13px;font-weight:700;letter-spacing:1px;color:#00ffaa;margin-bottom:16px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;letter-spacing:2px;color:#1a1a1a;text-transform:uppercase;padding:12px 16px;border-bottom:1px solid #0d0d0d;text-align:left;white-space:nowrap}
+td{padding:16px;border-bottom:1px solid #080808;font-size:13px;color:#666}
+tr:hover td{background:rgba(0,255,170,.02);color:#888}
+.mono{font-family:monospace;font-size:11px}
+.badge{display:inline-block;font-size:10px;padding:4px 10px;border-radius:4px;font-weight:700;letter-spacing:.5px}
+.b-active{background:rgba(77,159,255,.12);color:#4d9fff;border:1px solid rgba(77,159,255,.3)}
+.b-funded{background:rgba(0,255,170,.1);color:#00ffaa;border:1px solid rgba(0,255,170,.3)}
+.b-done{background:#080808;color:#333;border:1px solid #111}
+.action{color:#00ffaa;font-size:11px;cursor:pointer;font-weight:700;letter-spacing:.5px}
+.action:hover{text-shadow:0 0 8px rgba(0,255,170,.5)}
 </style>
 </head>
 <body>
 <div class="scan"></div>
-<div class="sidebar">
+<nav>
   <div class="logo">Global<span>EscrowX</span></div>
-  <div class="nav-section">
-    <div class="nav-label">Main</div>
-    <a class="nav-item active" href="dashboard.html">&#9632; Dashboard</a>
-    <a class="nav-item" href="dashboard.html">+ New Escrow</a>
-    <a class="nav-item" href="dashboard.html">&#9670; My Escrows</a>
-    <a class="nav-item" href="video.html">&#128249; Video Disputes</a>
+  <div class="nav-links">
+    <a class="nav-link active" href="dashboard.html">Dashboard</a>
+    <a class="nav-link" href="mediator.html">Mediator</a>
+    <a class="nav-link" href="video.html">Video</a>
+    <a class="nav-link" href="index.html">Back to Site</a>
   </div>
-  <div class="nav-section">
-    <div class="nav-label">Account</div>
-    <a class="nav-item" href="mediator.html">&#9878; Mediator Panel</a>
-    <a class="nav-item" href="index.html">&#127757; Back to Site</a>
-  </div>
-  <div class="wallet-box">
-    <div class="wallet-label">Connected Wallet</div>
-    <div class="wallet-addr">TAsAY6...CzWH</div>
-    <div class="wallet-bal">2,000 TRX</div>
-  </div>
-</div>
-<div class="main">
-  <div class="topbar">
-    <div class="page-title">USER DASHBOARD</div>
+  <div class="nav-right">
+    <div class="wallet-info">TAsAY6...CzWH &nbsp;|&nbsp; 2,000 TRX</div>
     <button class="connect-btn">CONNECT WALLET</button>
   </div>
-  <div class="content">
-    <div class="stats-row">
-      <div class="stat-card"><div class="sc-label">Total Escrows</div><div class="sc-num">3</div><div class="sc-sub">2 active, 1 complete</div></div>
-      <div class="stat-card"><div class="sc-label">Total Locked</div><div class="sc-num">30 USDT</div><div class="sc-sub">across all escrows</div></div>
-      <div class="stat-card"><div class="sc-label">Total Released</div><div class="sc-num">9.80 USDT</div><div class="sc-sub">seller received</div></div>
-      <div class="stat-card"><div class="sc-label">Fees Paid</div><div class="sc-num">0.20 USDT</div><div class="sc-sub">platform fee 2%</div></div>
+</nav>
+<div class="container">
+  <div class="page-header">
+    <div class="page-title">User Dashboard</div>
+    <div class="page-sub">Manage your escrows on the Tron blockchain</div>
+  </div>
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">Total Escrows</div><div class="stat-num">3</div><div class="stat-sub">2 active, 1 complete</div></div>
+    <div class="stat"><div class="stat-label">Total Locked</div><div class="stat-num">30 USDT</div><div class="stat-sub">across all escrows</div></div>
+    <div class="stat"><div class="stat-label">Total Released</div><div class="stat-num">9.80 USDT</div><div class="stat-sub">seller received</div></div>
+    <div class="stat"><div class="stat-label">Fees Paid</div><div class="stat-num">0.20 USDT</div><div class="stat-sub">platform fee 2%</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">+ Create New Escrow</div>
+    <div class="form-grid">
+      <div class="form-group"><div class="form-label">Seller Wallet Address</div><input class="form-input" placeholder="TXyz... seller Tron address"></div>
+      <div class="form-group"><div class="form-label">Currency</div><select class="form-input" style="background:#050a05;color:#fff"><option>USDT (Tron TRC-20) — LIVE NOW</option></select></div>
     </div>
-    <div class="create-card">
-      <div class="card-title">+ CREATE NEW ESCROW</div>
-      <div class="form-row">
-        <div class="form-group"><div class="fl">Seller Wallet Address</div><input class="fi" placeholder="TXyz... seller Tron address"></div>
-        <div class="form-group"><div class="fl">Currency</div><select class="fi"><option>USDT (Tron TRC-20) - LIVE</option></select></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><div class="fl">Amount (USDT)</div><input class="fi" id="amt" type="number" placeholder="e.g. 100" oninput="calc()"></div>
-        <div class="form-group"><div class="fl">Description</div><input class="fi" placeholder="e.g. Logo design project"></div>
-      </div>
-      <div class="fee-row">
-        <div class="fee-item">Amount: <span id="a">0 USDT</span></div>
-        <div class="fee-item">Fee (2%): <span id="f">0 USDT</span></div>
-        <div class="fee-item">Seller gets: <span id="s">0 USDT</span></div>
-      </div>
-      <button class="submit-btn">CREATE ESCROW ON TRON</button>
+    <div class="form-grid">
+      <div class="form-group"><div class="form-label">Amount (USDT)</div><input class="form-input" id="amt" type="number" placeholder="e.g. 100" oninput="calc()"></div>
+      <div class="form-group"><div class="form-label">Description</div><input class="form-input" placeholder="e.g. Logo design project"></div>
     </div>
-    <div class="section-title">MY ESCROWS</div>
-    <table class="escrow-table">
-      <tr><th>ID</th><th>Seller</th><th>Amount</th><th>Status</th><th>Date</th><th>Action</th></tr>
-      <tr><td style="font-family:monospace;font-size:10px;color:#333">TH1T...FYY</td><td style="font-family:monospace;font-size:10px">TEMq...MxP</td><td style="color:#00ffaa;font-weight:700">10 USDT</td><td><span class="badge b-active">ACTIVE</span></td><td>Apr 01, 2026</td><td><span class="action-link">RELEASE</span></td></tr>
-      <tr><td style="font-family:monospace;font-size:10px;color:#333">TH2K...GZZ</td><td style="font-family:monospace;font-size:10px">TKLm...NpQ</td><td style="color:#00ffaa;font-weight:700">10 USDT</td><td><span class="badge b-funded">FUNDED</span></td><td>Apr 01, 2026</td><td><span class="action-link">VIEW</span></td></tr>
-      <tr><td style="font-family:monospace;font-size:10px;color:#333">TH3L...HWW</td><td style="font-family:monospace;font-size:10px">TRSt...XyZ</td><td style="color:#555;font-weight:700">10 USDT</td><td><span class="badge b-done">COMPLETE</span></td><td>Mar 31, 2026</td><td><span style="color:#333;font-size:10px">DONE</span></td></tr>
+    <div class="fee-bar">
+      <div class="fee-item">Amount:<span id="a">0 USDT</span></div>
+      <div class="fee-item">Platform fee (2%):<span id="f">0 USDT</span></div>
+      <div class="fee-item">Seller receives:<span id="s">0 USDT</span></div>
+    </div>
+    <button class="create-btn">CREATE ESCROW ON TRON</button>
+  </div>
+  <div class="section-title">My Escrows</div>
+  <div class="table-wrap">
+    <table>
+      <tr><th>Escrow ID</th><th>Seller</th><th>Amount</th><th>Status</th><th>Date</th><th>Action</th></tr>
+      <tr><td class="mono" style="color:#555">TH1T...FYY</td><td class="mono">TEMq...MxP</td><td style="color:#00ffaa;font-weight:700">10 USDT</td><td><span class="badge b-active">ACTIVE</span></td><td>Apr 01, 2026</td><td><span class="action">RELEASE</span></td></tr>
+      <tr><td class="mono" style="color:#555">TH2K...GZZ</td><td class="mono">TKLm...NpQ</td><td style="color:#00ffaa;font-weight:700">10 USDT</td><td><span class="badge b-funded">FUNDED</span></td><td>Apr 01, 2026</td><td><span class="action">VIEW</span></td></tr>
+      <tr><td class="mono" style="color:#555">TH3L...HWW</td><td class="mono">TRSt...XyZ</td><td style="color:#555;font-weight:700">10 USDT</td><td><span class="badge b-done">COMPLETE</span></td><td>Mar 31, 2026</td><td><span style="color:#333;font-size:11px">DONE</span></td></tr>
     </table>
   </div>
 </div>
