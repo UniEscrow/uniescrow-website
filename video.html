@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlobalEscrowX — Video Disputes</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;color:#fff;font-family:-apple-system,sans-serif;display:grid;grid-template-columns:200px 1fr;min-height:100vh}
+.sidebar{background:#050a0f;border-right:1px solid rgba(77,159,255,.12);padding:20px 0;display:flex;flex-direction:column;position:fixed;width:200px;height:100vh}
+.logo{font-size:15px;font-weight:800;color:#4d9fff;letter-spacing:2px;padding:0 18px 20px;border-bottom:1px solid rgba(77,159,255,.08)}
+.logo span{color:#fff}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:12px;color:#444;cursor:pointer;transition:all .2s;border-left:2px solid transparent;text-decoration:none}
+.nav-item:hover{color:#4d9fff;border-left-color:rgba(77,159,255,.3)}
+.nav-item.active{color:#4d9fff;background:rgba(77,159,255,.05);border-left-color:#4d9fff}
+.nav-section{padding:14px 0}
+.nav-label{font-size:9px;letter-spacing:2px;color:#1a1a1a;text-transform:uppercase;padding:0 18px;margin-bottom:6px}
+.nd{width:16px;height:16px;border-radius:50%;background:#ff4444;color:#fff;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-left:auto}
+.user-box{margin:auto 12px 0;background:rgba(77,159,255,.04);border:1px solid rgba(77,159,255,.1);border-radius:8px;padding:12px}
+.u-label{font-size:9px;letter-spacing:2px;color:#4d9fff;text-transform:uppercase;margin-bottom:4px}
+.u-name{font-size:13px;font-weight:700}
+.u-role{font-size:9px;color:#333;margin-top:2px}
+.main{margin-left:200px;background:#000;min-height:100vh}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;border-bottom:1px solid rgba(77,159,255,.08);background:rgba(0,0,0,.95);position:sticky;top:0;z-index:10}
+.page-title{font-size:13px;font-weight:700;letter-spacing:1px}
+.live-badge{display:flex;align-items:center;gap:6px;background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.2);color:#ff4444;padding:5px 12px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:1px}
+.ld{width:6px;height:6px;border-radius:50%;background:#ff4444;box-shadow:0 0 8px #ff4444;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.content{padding:24px}
+.tabs{display:flex;gap:4px;margin-bottom:20px}
+.tab{padding:8px 18px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;border:1px solid #111;background:transparent;color:#333;transition:all .2s}
+.tab.active{background:rgba(77,159,255,.1);color:#4d9fff;border-color:rgba(77,159,255,.3)}
+.video-room{background:#050a0f;border:1px solid rgba(255,68,68,.2);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.vr-header{padding:12px 18px;background:rgba(255,68,68,.05);border-bottom:1px solid rgba(255,68,68,.1);display:flex;justify-content:space-between;align-items:center}
+.vr-title{font-size:11px;font-weight:700;color:#ff4444;letter-spacing:1px;display:flex;align-items:center;gap:8px}
+.vr-timer{font-family:monospace;font-size:12px;color:#ff4444;font-weight:700}
+.vr-body{padding:16px}
+.video-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.vt{background:#000;border:1px solid #111;border-radius:8px;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.vt.speaking{border-color:#00ffaa;box-shadow:0 0 12px rgba(0,255,170,.2)}
+.vt-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;margin-bottom:6px}
+.va-b{background:rgba(0,255,170,.15);color:#00ffaa;border:1px solid rgba(0,255,170,.3)}
+.va-s{background:rgba(77,159,255,.15);color:#4d9fff;border:1px solid rgba(77,159,255,.3)}
+.va-m{background:rgba(150,100,255,.15);color:#9966ff;border:1px solid rgba(150,100,255,.3)}
+.vt-name{font-size:10px;font-weight:700}
+.vt-role{font-size:8px;color:#333;letter-spacing:1px;margin-top:2px}
+.vt-badge{position:absolute;bottom:5px;right:5px;font-size:8px;background:rgba(0,0,0,.8);border-radius:3px;padding:2px 5px}
+.vt-badge.sp{color:#00ffaa}
+.vt-badge.ho{color:#9966ff}
+.controls{display:flex;justify-content:center;gap:10px;margin-bottom:14px}
+.cbtn{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;border:none;transition:all .2s}
+.con{background:#1a1a1a;color:#fff}
+.cof{background:rgba(255,68,68,.15);color:#ff4444;border:1px solid rgba(255,68,68,.2)}
+.cend{background:#ff4444;color:#fff;width:46px}
+.chat-box{background:#000;border:1px solid #0d0d0d;border-radius:6px;padding:12px}
+.chat-title{font-size:9px;letter-spacing:2px;color:#222;text-transform:uppercase;margin-bottom:10px}
+.chat-msgs{display:flex;flex-direction:column;gap:8px;max-height:90px;overflow-y:auto;margin-bottom:10px}
+.cm{font-size:10px;line-height:1.5}
+.cm-b{color:#00ffaa}.cm-s{color:#4d9fff}.cm-m{color:#9966ff}.cm-sys{color:#222;font-style:italic}
+.chat-row{display:flex;gap:8px}
+.ci{flex:1;background:#050a0f;border:1px solid #0d0d14;border-radius:3px;padding:7px 10px;font-size:11px;color:#fff;outline:none;font-family:inherit}
+.ci::placeholder{color:#1a1a1a}
+.cs{background:#4d9fff;color:#000;border:none;padding:7px 14px;border-radius:3px;font-size:10px;font-weight:800;cursor:pointer}
+.call-card{background:#050a0f;border:1px solid #0d1420;border-radius:10px;padding:14px 16px;margin-bottom:10px;transition:all .3s}
+.call-card:hover{border-color:rgba(77,159,255,.2)}
+.call-card.live-card{border-color:rgba(255,68,68,.3);animation:lp 3s ease-in-out infinite}
+@keyframes lp{0%,100%{box-shadow:0 0 0 rgba(255,68,68,0)}50%{box-shadow:0 0 20px rgba(255,68,68,.1)}}
+.cc-top{display:flex;justify-content:space-between;margin-bottom:10px}
+.cc-id{font-family:monospace;font-size:10px;color:#4d9fff}
+.cc-time{font-size:11px;font-weight:700}
+.badge{display:inline-block;font-size:9px;padding:3px 8px;border-radius:3px;font-weight:700;letter-spacing:1px}
+.b-live{background:rgba(255,68,68,.1);color:#ff4444;border:1px solid rgba(255,68,68,.3)}
+.b-soon{background:rgba(255,170,0,.08);color:#ffaa00;border:1px solid rgba(255,170,0,.2)}
+.b-sched{background:rgba(77,159,255,.08);color:#4d9fff;border:1px solid rgba(77,159,255,.2)}
+.cc-parties{display:flex;gap:6px;align-items:center;margin-bottom:8px;font-size:10px;color:#444}
+.cp{display:flex;align-items:center;gap:5px;background:#000;border:1px solid #0d0d0d;border-radius:3px;padding:4px 8px}
+.pa{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800}
+.pa-b{background:rgba(0,255,170,.15);color:#00ffaa}
+.pa-s{background:rgba(77,159,255,.15);color:#4d9fff}
+.pa-m{background:rgba(150,100,255,.15);color:#9966ff}
+.pn{font-size:9px;color:#444}
+.pd{width:5px;height:5px;border-radius:50%;margin-left:3px}
+.pd-on{background:#00ffaa;box-shadow:0 0 4px #00ffaa}
+.pd-off{background:#222}
+.cc-bottom{display:flex;justify-content:space-between;align-items:center}
+.cc-subj{font-size:10px;color:#2a2a2a;flex:1;margin-right:10px}
+.cc-btns{display:flex;gap:6px}
+.cbt{padding:6px 12px;border-radius:3px;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:1px;border:none;white-space:nowrap}
+.cbt-r{background:#ff4444;color:#fff}
+.cbt-b{background:#4d9fff;color:#000}
+.cbt-o{background:transparent;color:#4d9fff;border:1px solid rgba(77,159,255,.2)}
+.schedule-card{background:#050a0f;border:1px solid rgba(77,159,255,.12);border-radius:10px;padding:18px;margin-bottom:16px}
+.sc-title{font-size:11px;font-weight:700;letter-spacing:1px;color:#4d9fff;margin-bottom:14px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#333}
+.fi{background:#000;border:1px solid #0d0d0d;border-radius:4px;padding:9px 12px;font-size:11px;color:#fff;outline:none;font-family:inherit;transition:border-color .2s}
+.fi:focus{border-color:rgba(77,159,255,.3)}
+.fi::placeholder{color:#1a1a1a}
+.sched-btn{background:#4d9fff;color:#000;border:none;padding:10px 24px;border-radius:4px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:1px;transition:all .3s}
+.sched-btn:hover{box-shadow:0 0 20px rgba(77,159,255,.4)}
+.confirm-box{display:none;margin-top:12px;background:rgba(0,255,170,.05);border:1px solid rgba(0,255,170,.15);border-radius:6px;padding:12px;font-size:11px;color:#00aa77}
+.scan{position:fixed;left:0;width:100%;height:1px;background:rgba(77,159,255,.2);z-index:999;animation:sd 8s linear infinite;pointer-events:none}
+@keyframes sd{0%{top:0}100%{top:100%}}
+</style>
+</head>
+<body>
+<div class="scan"></div>
+<div class="sidebar">
+  <div class="logo">Global<span>EscrowX</span></div>
+  <div class="nav-section">
+    <div class="nav-label">Video</div>
+    <a class="nav-item active" href="video.html">&#128249; Video Calls <div class="nd">1</div></a>
+    <a class="nav-item" href="video.html">&#128197; Schedule</a>
+    <a class="nav-item" href="video.html">&#9679; Recordings</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Disputes</div>
+    <a class="nav-item" href="mediator.html">&#9873; Queue</a>
+    <a class="nav-item" href="dashboard.html">&#9632; Dashboard</a>
+    <a class="nav-item" href="index.html">&#127757; Back to Site</a>
+  </div>
+  <div class="user-box">
+    <div class="u-label">Logged in as</div>
+    <div class="u-name">Md Shamim</div>
+    <div class="u-role">MEDIATOR</div>
+  </div>
+</div>
+<div class="main">
+  <div class="topbar">
+    <div class="page-title">VIDEO DISPUTE CALLS</div>
+    <div class="live-badge"><div class="ld"></div>1 CALL LIVE NOW</div>
+  </div>
+  <div class="content">
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('live',this)">Live Now</button>
+      <button class="tab" onclick="showTab('sched',this)">Scheduled</button>
+      <button class="tab" onclick="showTab('new',this)">+ Schedule New</button>
+    </div>
+    <div id="tab-live">
+      <div class="video-room">
+        <div class="vr-header">
+          <div class="vr-title"><div class="ld"></div>LIVE - DISPUTE #TH1T3g29...FYY - 50 USDT</div>
+          <div class="vr-timer" id="timer">00:23:45</div>
+        </div>
+        <div class="vr-body">
+          <div class="video-grid">
+            <div class="vt speaking"><div class="vt-avatar va-b">B</div><div class="vt-name">Buyer</div><div class="vt-role">TAsAY6...CzWH</div><div class="vt-badge sp">SPEAKING</div></div>
+            <div class="vt"><div class="vt-avatar va-s">S</div><div class="vt-name">Seller</div><div class="vt-role">TEMqeK...MxP</div><div class="vt-badge">LISTENING</div></div>
+            <div class="vt"><div class="vt-avatar va-m">M</div><div class="vt-name">Mediator</div><div class="vt-role">Md Shamim</div><div class="vt-badge ho">HOST</div></div>
+          </div>
+          <div class="controls">
+            <button class="cbtn con">&#127908;</button>
+            <button class="cbtn con">&#128247;</button>
+            <button class="cbtn con">&#128421;</button>
+            <button class="cbtn cof">&#128263;</button>
+            <button class="cbtn cend" onclick="alert('Call ended!')">&#10005;</button>
+          </div>
+          <div class="chat-box">
+            <div class="chat-title">In-call chat</div>
+            <div class="chat-msgs" id="msgs">
+              <div class="cm cm-sys">Call started - all parties joined</div>
+              <div class="cm"><span class="cm-b">Buyer:</span> I paid for a complete logo set but only received 2 files</div>
+              <div class="cm"><span class="cm-s">Seller:</span> I delivered all 3 files, check your email</div>
+              <div class="cm"><span class="cm-m">Mediator:</span> Please share your evidence now</div>
+            </div>
+            <div class="chat-row">
+              <input class="ci" id="ci" placeholder="Type message..." onkeydown="if(event.key==='Enter')send()">
+              <button class="cs" onclick="send()">SEND</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button style="background:#00ffaa;color:#000;border:none;padding:12px;border-radius:6px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:1px" onclick="window.location.href='mediator.html'">&#9878; RESOLVE DISPUTE NOW</button>
+        <button style="background:rgba(255,68,68,.1);color:#ff4444;border:1px solid rgba(255,68,68,.2);padding:12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:1px">&#128203; ADD CASE NOTES</button>
+      </div>
+    </div>
+    <div id="tab-sched" style="display:none">
+      <div class="call-card live-card">
+        <div class="cc-top"><div><div class="cc-id">ESCROW #TH1T3g29...FYY</div><div style="margin-top:4px"><span class="badge b-live">LIVE NOW</span></div></div><div class="cc-time">NOW</div></div>
+        <div class="cc-parties"><div class="cp"><div class="pa pa-b">B</div><div class="pn">Buyer</div><div class="pd pd-on"></div></div><span style="color:#1a1a1a">vs</span><div class="cp"><div class="pa pa-s">S</div><div class="pn">Seller</div><div class="pd pd-on"></div></div><span style="color:#1a1a1a">+</span><div class="cp"><div class="pa pa-m">M</div><div class="pn">Mediator</div><div class="pd pd-on"></div></div></div>
+        <div class="cc-bottom"><div class="cc-subj">Logo design dispute - 50 USDT</div><div class="cc-btns"><button class="cbt cbt-r">JOIN CALL</button></div></div>
+      </div>
+      <div class="call-card">
+        <div class="cc-top"><div><div class="cc-id">ESCROW #TK2M9p...XZZ</div><div style="margin-top:4px"><span class="badge b-soon">IN 2 HOURS</span></div></div><div class="cc-time">3:00 PM</div></div>
+        <div class="cc-parties"><div class="cp"><div class="pa pa-b">B</div><div class="pn">Buyer</div><div class="pd pd-off"></div></div><span style="color:#1a1a1a">vs</span><div class="cp"><div class="pa pa-s">S</div><div class="pn">Seller</div><div class="pd pd-off"></div></div></div>
+        <div class="cc-bottom"><div class="cc-subj">Partial delivery - 25 USDT</div><div class="cc-btns"><button class="cbt cbt-o">REMIND</button><button class="cbt cbt-b">PREP</button></div></div>
+      </div>
+      <div class="call-card">
+        <div class="cc-top"><div><div class="cc-id">ESCROW #TN4K8r...WQQ</div><div style="margin-top:4px"><span class="badge b-sched">TOMORROW 10AM</span></div></div><div class="cc-time">Apr 02</div></div>
+        <div class="cc-parties"><div class="cp"><div class="pa pa-b">B</div><div class="pn">Buyer</div><div class="pd pd-off"></div></div><span style="color:#1a1a1a">vs</span><div class="cp"><div class="pa pa-s">S</div><div class="pn">Seller</div><div class="pd pd-off"></div></div></div>
+        <div class="cc-bottom"><div class="cc-subj">Quality dispute - 10 USDT</div><div class="cc-btns"><button class="cbt cbt-o">RESCHEDULE</button><button class="cbt cbt-b">PREP</button></div></div>
+      </div>
+    </div>
+    <div id="tab-new" style="display:none">
+      <div class="schedule-card">
+        <div class="sc-title">&#128197; SCHEDULE A NEW VIDEO DISPUTE CALL</div>
+        <div class="form-row">
+          <div class="fg"><div class="fl">Escrow ID</div><input class="fi" placeholder="TH1T3g29...FYY"></div>
+          <div class="fg"><div class="fl">Assign Mediator</div><select class="fi" style="background:#000;color:#fff"><option>Md Shamim (Available)</option><option>Mediator 2 (Available)</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="fg"><div class="fl">Date</div><input class="fi" type="date"></div>
+          <div class="fg"><div class="fl">Time</div><input class="fi" type="time" value="15:00"></div>
+        </div>
+        <div class="fg" style="margin-bottom:12px"><div class="fl">Notes</div><input class="fi" placeholder="Brief description of the dispute..."></div>
+        <button class="sched-btn" onclick="sched(this)">&#128231; SCHEDULE AND NOTIFY BOTH PARTIES</button>
+        <div class="confirm-box" id="conf">&#10003; Call scheduled! Emails sent to buyer, seller and mediator with the video link.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function showTab(t,el){
+  ['live','sched','new'].forEach(x=>document.getElementById('tab-'+x).style.display=x===t?'block':'none');
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+}
+let s=23*60+45;
+setInterval(()=>{s++;const m=Math.floor(s/60).toString().padStart(2,'0');const sc=(s%60).toString().padStart(2,'0');const el=document.getElementById('timer');if(el)el.textContent='00:'+m+':'+sc;},1000);
+function send(){const i=document.getElementById('ci');const m=i.value.trim();if(!m)return;const msgs=document.getElementById('msgs');const d=document.createElement('div');d.className='cm';d.innerHTML='<span class="cm-m">Mediator:</span> '+m;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;i.value='';}
+function sched(btn){btn.textContent='SCHEDULING...';btn.style.opacity='.7';setTimeout(()=>{btn.textContent='SCHEDULED!';btn.style.background='#00ffaa';btn.style.opacity='1';document.getElementById('conf').style.display='block';},1200);}
+</script>
+</body></html>

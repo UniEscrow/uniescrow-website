@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlobalEscrowX — Mediator Panel</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;color:#fff;font-family:-apple-system,sans-serif;display:grid;grid-template-columns:200px 1fr;min-height:100vh}
+.sidebar{background:#05050a;border-right:1px solid rgba(150,100,255,.12);padding:20px 0;display:flex;flex-direction:column;position:fixed;width:200px;height:100vh}
+.logo{font-size:15px;font-weight:800;color:#9966ff;letter-spacing:2px;padding:0 18px 20px;border-bottom:1px solid rgba(150,100,255,.08)}
+.logo span{color:#fff}
+.med-badge{display:inline-block;background:rgba(150,100,255,.1);border:1px solid rgba(150,100,255,.3);color:#9966ff;padding:3px 10px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:1px;margin:10px 18px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:12px;color:#444;cursor:pointer;transition:all .2s;border-left:2px solid transparent;text-decoration:none}
+.nav-item:hover{color:#9966ff;border-left-color:rgba(150,100,255,.3)}
+.nav-item.active{color:#9966ff;background:rgba(150,100,255,.05);border-left-color:#9966ff}
+.nav-section{padding:14px 0}
+.nav-label{font-size:9px;letter-spacing:2px;color:#1a1a1a;text-transform:uppercase;padding:0 18px;margin-bottom:6px}
+.notif-dot{width:16px;height:16px;border-radius:50%;background:#ff4444;color:#fff;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-left:auto}
+.med-box{margin:auto 12px 0;background:rgba(150,100,255,.04);border:1px solid rgba(150,100,255,.1);border-radius:8px;padding:12px}
+.m-label{font-size:9px;letter-spacing:2px;color:#9966ff;text-transform:uppercase;margin-bottom:4px}
+.m-name{font-size:14px;font-weight:700}
+.m-stats{display:flex;gap:12px;margin-top:6px;font-size:9px;color:#333}
+.m-stats span{color:#9966ff;font-weight:700}
+.main{margin-left:200px;background:#000;min-height:100vh}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;border-bottom:1px solid rgba(150,100,255,.1);background:rgba(0,0,0,.95);position:sticky;top:0;z-index:10}
+.page-title{font-size:13px;font-weight:700;letter-spacing:1px}
+.open-badge{background:rgba(255,68,68,.1);color:#ff4444;border:1px solid rgba(255,68,68,.2);padding:5px 12px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:1px}
+.content{padding:24px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.sc{background:#05050a;border:1px solid #0d0d14;border-radius:10px;padding:16px}
+.sc-label{font-size:9px;color:#1a1a1a;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.sc-num{font-size:22px;font-weight:800;text-shadow:0 0 15px currentColor}
+.red{color:#ff4444}
+.purple{color:#9966ff}
+.green{color:#00ffaa}
+.sc-sub{font-size:9px;color:#1a1a1a;margin-top:4px}
+.resolve-panel{background:#05050a;border:1px solid rgba(150,100,255,.2);border-radius:10px;padding:18px;margin-bottom:16px}
+.rp-title{font-size:11px;font-weight:700;letter-spacing:1px;color:#9966ff;margin-bottom:14px}
+.rp-top{background:#000;border-radius:6px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.rp-id{font-family:monospace;font-size:10px;color:#9966ff}
+.rp-amount{font-size:20px;font-weight:800;color:#9966ff}
+.ev-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.ev-box{background:#000;border:1px solid #0d0d0d;border-radius:6px;padding:12px}
+.ev-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.ev-title.b{color:#00ffaa}
+.ev-title.s{color:#4d9fff}
+.ev-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #080808;font-size:10px;color:#444;cursor:pointer}
+.ev-item:last-child{border-bottom:none}
+.ev-item:hover{color:#9966ff}
+.verdict-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.vbtn{padding:12px;border-radius:6px;font-size:10px;font-weight:800;cursor:pointer;letter-spacing:1px;border:none;text-align:center;transition:all .3s}
+.vb-buyer{background:rgba(0,255,170,.08);color:#00ffaa;border:1px solid rgba(0,255,170,.2)}
+.vb-buyer:hover{background:rgba(0,255,170,.15)}
+.vb-seller{background:rgba(77,159,255,.08);color:#4d9fff;border:1px solid rgba(77,159,255,.2)}
+.vb-seller:hover{background:rgba(77,159,255,.15)}
+.vb-split{background:rgba(150,100,255,.08);color:#9966ff;border:1px solid rgba(150,100,255,.2)}
+.vb-split:hover{background:rgba(150,100,255,.15)}
+.vbtn.selected{transform:scale(1.04);box-shadow:0 0 16px rgba(150,100,255,.3)}
+.notes-input{width:100%;background:#000;border:1px solid #111;border-radius:4px;padding:10px 12px;font-size:11px;color:#fff;outline:none;font-family:inherit;resize:none;min-height:60px;transition:border-color .2s;margin-bottom:10px}
+.notes-input:focus{border-color:rgba(150,100,255,.3)}
+.notes-input::placeholder{color:#1a1a1a}
+.submit-row{display:flex;gap:8px}
+.submit-btn{background:#9966ff;color:#000;border:none;padding:10px 24px;border-radius:4px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:1px;transition:all .3s}
+.submit-btn:hover{box-shadow:0 0 20px rgba(150,100,255,.5)}
+.vid-btn{background:transparent;color:#00ffaa;border:1px solid rgba(0,255,170,.2);padding:10px 16px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px}
+.section-title{font-size:11px;font-weight:700;letter-spacing:1px;color:#9966ff;margin-bottom:14px}
+.dc{background:#05050a;border:1px solid #0d0d14;border-radius:10px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:all .3s}
+.dc:hover{border-color:rgba(150,100,255,.3)}
+.dc.urgent{border-color:rgba(255,68,68,.2)}
+.dc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.dc-id{font-family:monospace;font-size:10px;color:#9966ff}
+.dc-amt{font-size:16px;font-weight:800;color:#9966ff}
+.badge{display:inline-block;font-size:9px;padding:3px 8px;border-radius:3px;font-weight:700;letter-spacing:1px}
+.b-urgent{background:rgba(255,68,68,.1);color:#ff4444;border:1px solid rgba(255,68,68,.3)}
+.b-new{background:rgba(150,100,255,.1);color:#9966ff;border:1px solid rgba(150,100,255,.3)}
+.b-sched{background:rgba(0,255,170,.08);color:#00aa77;border:1px solid rgba(0,255,170,.2)}
+.dc-parties{display:flex;gap:6px;align-items:center;margin-bottom:8px;font-size:10px;color:#333}
+.dc-wallet{font-family:monospace;font-size:9px;background:#000;border:1px solid #111;padding:2px 7px;border-radius:3px}
+.dc-bottom{display:flex;justify-content:space-between;align-items:center}
+.dc-reason{font-size:10px;color:#2a2a2a;flex:1;margin-right:10px}
+.dc-btns{display:flex;gap:6px}
+.dbtn{padding:6px 12px;border-radius:3px;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:1px;border:none;white-space:nowrap}
+.dbtn-p{background:#9966ff;color:#000}
+.dbtn-o{background:transparent;color:#9966ff;border:1px solid rgba(150,100,255,.3)}
+.dbtn-g{background:#00ffaa;color:#000}
+.scan{position:fixed;left:0;width:100%;height:1px;background:rgba(150,100,255,.2);z-index:999;animation:sd 8s linear infinite;pointer-events:none}
+@keyframes sd{0%{top:0}100%{top:100%}}
+</style>
+</head>
+<body>
+<div class="scan"></div>
+<div class="sidebar">
+  <div class="logo">Global<span>EscrowX</span></div>
+  <div class="med-badge">MEDIATOR PANEL</div>
+  <div class="nav-section">
+    <div class="nav-label">Queue</div>
+    <a class="nav-item active" href="mediator.html">&#9873; Disputes <div class="notif-dot">3</div></a>
+    <a class="nav-item" href="video.html">&#128249; Video Sessions</a>
+    <a class="nav-item" href="mediator.html">&#10003; Resolved</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Tools</div>
+    <a class="nav-item" href="dashboard.html">&#9632; User Dashboard</a>
+    <a class="nav-item" href="index.html">&#127757; Back to Site</a>
+  </div>
+  <div class="med-box">
+    <div class="m-label">Mediator</div>
+    <div class="m-name">Md Shamim</div>
+    <div class="m-stats">Resolved: <span>12</span> &nbsp; Rating: <span>4.9★</span></div>
+  </div>
+</div>
+<div class="main">
+  <div class="topbar">
+    <div class="page-title">DISPUTE QUEUE</div>
+    <div class="open-badge">3 OPEN DISPUTES</div>
+  </div>
+  <div class="content">
+    <div class="stats-row">
+      <div class="sc"><div class="sc-label">Open Disputes</div><div class="sc-num red">3</div><div class="sc-sub">needs attention</div></div>
+      <div class="sc"><div class="sc-label">Scheduled Today</div><div class="sc-num purple">1</div><div class="sc-sub">video call at 3pm</div></div>
+      <div class="sc"><div class="sc-label">Resolved This Week</div><div class="sc-num green">5</div><div class="sc-sub">avg 2 hrs each</div></div>
+      <div class="sc"><div class="sc-label">USDT Under Dispute</div><div class="sc-num purple">85 USDT</div><div class="sc-sub">across all cases</div></div>
+    </div>
+    <div class="resolve-panel">
+      <div class="rp-title">&#9878; ACTIVE CASE - READY TO RESOLVE</div>
+      <div class="rp-top">
+        <div><div class="rp-id">ESCROW #TH1T3g29...FYY</div><div style="font-size:9px;color:#2a2a2a;margin-top:3px">Logo design project</div></div>
+        <div><div class="rp-amount">50 USDT</div></div>
+      </div>
+      <div class="ev-grid">
+        <div class="ev-box"><div class="ev-title b">BUYER EVIDENCE</div><div class="ev-item">&#128203; payment-proof.pdf</div><div class="ev-item">&#128247; screenshot-chat.png</div></div>
+        <div class="ev-box"><div class="ev-title s">SELLER EVIDENCE</div><div class="ev-item">&#128203; delivery-confirmation.pdf</div><div class="ev-item">&#128247; final-logo-files.zip</div></div>
+      </div>
+      <div style="font-size:9px;letter-spacing:2px;color:#333;text-transform:uppercase;margin-bottom:10px">Verdict - Release funds to:</div>
+      <div class="verdict-row">
+        <div class="vbtn vb-buyer" onclick="pick(this)">&#10003; BUYER<br><span style="font-size:9px;opacity:.7">Full refund</span></div>
+        <div class="vbtn vb-seller" onclick="pick(this)">&#10003; SELLER<br><span style="font-size:9px;opacity:.7">Release payment</span></div>
+        <div class="vbtn vb-split" onclick="pick(this)">&#9878; SPLIT 50/50<br><span style="font-size:9px;opacity:.7">Both get half</span></div>
+      </div>
+      <textarea class="notes-input" placeholder="Write resolution notes here..."></textarea>
+      <div class="submit-row">
+        <button class="submit-btn" onclick="submit(this)">SUBMIT VERDICT ON BLOCKCHAIN</button>
+        <button class="vid-btn" onclick="window.location.href='video.html'">&#128249; SCHEDULE VIDEO CALL</button>
+      </div>
+    </div>
+    <div class="section-title">ALL OPEN DISPUTES</div>
+    <div class="dc urgent">
+      <div class="dc-top"><div><div class="dc-id">ESCROW #TH1T3g...FYY</div><div style="margin-top:4px"><span class="badge b-urgent">URGENT - 24H DEADLINE</span></div></div><div><div class="dc-amt">50 USDT</div></div></div>
+      <div class="dc-parties"><div class="dc-wallet">TAsAY6...CzWH</div><span>vs</span><div class="dc-wallet">TEMqeK...MxP</div></div>
+      <div class="dc-bottom"><div class="dc-reason">Buyer claims logo was not delivered as agreed.</div><div class="dc-btns"><button class="dbtn dbtn-o">VIEW</button><button class="dbtn dbtn-p">RESOLVE</button></div></div>
+    </div>
+    <div class="dc">
+      <div class="dc-top"><div><div class="dc-id">ESCROW #TK2M9p...XZZ</div><div style="margin-top:4px"><span class="badge b-sched">VIDEO TODAY 3PM</span></div></div><div><div class="dc-amt">25 USDT</div></div></div>
+      <div class="dc-parties"><div class="dc-wallet">TKLm9...NpQ</div><span>vs</span><div class="dc-wallet">TRSt4...XyZ</div></div>
+      <div class="dc-bottom"><div class="dc-reason">Partial delivery - 2 of 3 milestones completed.</div><div class="dc-btns"><button class="dbtn dbtn-o">VIEW</button><button class="dbtn dbtn-g" onclick="window.location.href='video.html'">JOIN CALL</button></div></div>
+    </div>
+    <div class="dc">
+      <div class="dc-top"><div><div class="dc-id">ESCROW #TN4K8r...WQQ</div><div style="margin-top:4px"><span class="badge b-new">NEW - JUST OPENED</span></div></div><div><div class="dc-amt">10 USDT</div></div></div>
+      <div class="dc-parties"><div class="dc-wallet">TNkCP...WRzf</div><span>vs</span><div class="dc-wallet">TYgH7...QmN</div></div>
+      <div class="dc-bottom"><div class="dc-reason">Quality of work does not match agreed specs.</div><div class="dc-btns"><button class="dbtn dbtn-o">VIEW</button><button class="dbtn dbtn-p">ASSIGN</button></div></div>
+    </div>
+  </div>
+</div>
+<script>
+function pick(el){document.querySelectorAll('.vbtn').forEach(b=>b.classList.remove('selected'));el.classList.add('selected')}
+function submit(btn){btn.textContent='SUBMITTING...';btn.style.opacity='.7';setTimeout(()=>{btn.textContent='VERDICT SUBMITTED!';btn.style.background='#00ffaa';btn.style.opacity='1'},1500)}
+</script>
+</body></html>
