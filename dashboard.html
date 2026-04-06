@@ -341,80 +341,75 @@ async function loadEscrows(s){
   if(!addr) return;
   const tbody=document.getElementById('escrow-tbody');
   const count=document.getElementById('escrow-count');
-  tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#1a1a1a;padding:20px;font-size:11px;letter-spacing:1px">Loading from blockchain...</td></tr>';
+  tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#1a1a1a;padding:20px;font-size:11px">Loading...</td></tr>';
   try{
-    const resp = await fetch('https://nile.trongrid.io/v1/contracts/'+CONTRACT+'/events?event_name=EscrowCreated&limit=50&order_by=block_timestamp,desc');
-    const data = await resp.json();
-    const events = (data.data||[]).filter(e=>{
-      try{
-        const buyer = tw.address.fromHex('41'+e.result?.buyer?.slice(2));
-        return buyer === addr;
-      }catch{return false;}
+    const resp = await fetch('https://nile.trongrid.io/v1/contracts/'+CONTRACT+'/events?event_name=EscrowCreated&limit=50&order_by=block_timestamp,desc',{
+      headers:{'TRON-PRO-API-KEY':''}
     });
-    if(!events.length){
-      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#1a1a1a;padding:24px;font-size:11px;letter-spacing:1px">No escrows yet. Create your first one above!</td></tr>';
+    const data = await resp.json();
+    const all = data.data||[];
+    const mine = [];
+    for(const e of all){
+      try{
+        let buyer = e.result?.buyer||'';
+        if(buyer.length===40) buyer='41'+buyer;
+        const buyerAddr = tw.address.fromHex(buyer);
+        if(buyerAddr===addr) mine.push(e);
+      }catch{}
+    }
+    if(!mine.length){
+      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#1a1a1a;padding:24px;font-size:11px">No escrows yet. Create your first one above!</td></tr>';
       count.textContent='0 escrows';
       return;
     }
-    count.textContent=events.length+' escrow'+(events.length!==1?'s':'');
+    count.textContent=mine.length+' escrow'+(mine.length!==1?'s':'');
     tbody.innerHTML='';
-    for(const ev of events){
-      const txId = ev.transaction_id||'';
-      const amount = (Number(ev.result?.amount||0)/1e6).toFixed(2);
-      let sellerAddr = '-';
-      try{sellerAddr = tw.address.fromHex('41'+ev.result?.seller?.slice(2));}catch{}
-      const sh=(a)=>a&&a.length>10?a.slice(0,6)+'...'+a.slice(-4):a;
-      const rawId = ev.result?.id||'';
-      const escrowId = rawId.startsWith('0x')?rawId:'0x'+rawId;
-      const link='https://nile.tronscan.org/#/transaction/'+txId;
-      const date = ev.block_timestamp ? new Date(ev.block_timestamp).toLocaleDateString() : '-';
-
-      // Read real state from blockchain
-      let stateNum = 1; // default funded
-      let stateLabel = 'FUNDED';
-      let badgeClass = 'b-funded';
+    for(const ev of mine){
+      const txId=ev.transaction_id||'';
+      const amt=(Number(ev.result?.amount||0)/1e6).toFixed(2);
+      let seller='-';
       try{
-        const escContract = await tw.contract(ESCROW_ABI, CONTRACT);
-        const escData = await escContract.getEscrow(escrowId).call();
-        stateNum = Number(escData.state||escData[3]||1);
-        const stateMap = {0:'CREATED',1:'FUNDED',2:'ACTIVE',3:'COMPLETE',4:'RELEASED',5:'REFUNDED'};
-        const badgeMap = {0:'b-funded',1:'b-funded',2:'b-active',3:'b-active',4:'b-done',5:'b-done'};
-        stateLabel = stateMap[stateNum]||'FUNDED';
-        badgeClass = badgeMap[stateNum]||'b-funded';
-      }catch(e){
-        console.warn('Could not read escrow state:',e.message);
-      }
+        let sh=ev.result?.seller||'';
+        if(sh.length===40)sh='41'+sh;
+        seller=tw.address.fromHex(sh);
+      }catch{}
+      const short=(a)=>a&&a.length>10?a.slice(0,6)+'...'+a.slice(-4):a;
+      let rawId=ev.result?.id||'';
+      if(!rawId.startsWith('0x'))rawId='0x'+rawId;
+      const safeId=rawId.replace(/[^a-zA-Z0-9]/g,'');
+      const link='https://nile.tronscan.org/#/transaction/'+txId;
+      const date=ev.block_timestamp?new Date(ev.block_timestamp).toLocaleDateString():'-';
 
-      // Determine action button
-      let actionHtml = '';
-      const safeId = escrowId.replace(/[^a-zA-Z0-9x]/g,'');
-      if(stateNum === 1 || stateNum === 2 || stateNum === 3){
-        // Eligible for release
-        actionHtml = `<button class="release-btn" id="rbtn-${safeId}" onclick="releasePayment('${escrowId}','${amount}','${sellerAddr}',this)">RELEASE →</button>`;
-      } else if(stateNum === 4){
-        actionHtml = '<span style="color:#00ffaa;font-size:10px;font-weight:700">✓ RELEASED</span>';
-      } else if(stateNum === 5){
-        actionHtml = '<span style="color:#333;font-size:10px">REFUNDED</span>';
-      } else {
-        actionHtml = '<span style="color:#333;font-size:10px">—</span>';
+      // Get real state
+      let stateNum=1;
+      try{
+        const ec=await tw.contract(ESCROW_ABI,CONTRACT);
+        const d=await ec.getEscrow(rawId).call();
+        stateNum=Number(d[3]||d.state||1);
+      }catch{}
+
+      const stateMap={0:'CREATED',1:'FUNDED',2:'ACTIVE',3:'COMPLETE',4:'RELEASED',5:'REFUNDED'};
+      const badgeMap={0:'b-funded',1:'b-funded',2:'b-active',3:'b-active',4:'b-done',5:'b-done'};
+      const stateLabel=stateMap[stateNum]||'FUNDED';
+      const badgeClass=badgeMap[stateNum]||'b-funded';
+
+      let action='';
+      if(stateNum<=3){
+        action='<button class="release-btn" id="rb-'+safeId+'" onclick="releasePayment(''+rawId+'',''+amt+'',''+seller+'',this)">RELEASE →</button>';
+      }else if(stateNum===4){
+        action='<span style="color:#00ffaa;font-size:10px;font-weight:700">✓ RELEASED</span>';
+      }else{
+        action='<span style="color:#333;font-size:10px">DONE</span>';
       }
 
       const tr=document.createElement('tr');
-      tr.id = 'row-'+safeId;
-      tr.innerHTML=`
-        <td class="mono"><a href="${link}" target="_blank" style="color:#4d9fff;text-decoration:none">${sh(txId)}↗</a></td>
-        <td class="mono">${sh(sellerAddr)}</td>
-        <td style="color:#00ffaa;font-weight:700">${amount} USDT</td>
-        <td id="status-${safeId}"><span class="badge ${badgeClass}">${stateLabel}</span></td>
-        <td style="color:#1a1a1a;font-size:11px">${date}</td>
-        <td>${actionHtml}</td>
-      `;
+      tr.id='row-'+safeId;
+      tr.innerHTML='<td class="mono"><a href="'+link+'" target="_blank" style="color:#4d9fff;text-decoration:none">'+short(txId)+'↗</a></td><td class="mono">'+short(seller)+'</td><td style="color:#00ffaa;font-weight:700">'+amt+' USDT</td><td id="st-'+safeId+'"><span class="badge '+badgeClass+'">'+stateLabel+'</span></td><td style="color:#1a1a1a;font-size:11px">'+date+'</td><td>'+action+'</td>';
       tbody.appendChild(tr);
     }
   }catch(e){
     console.error('[LoadEscrows]',e);
-    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#1a1a1a;padding:24px;font-size:11px">Could not load escrows. Try refreshing.</td></tr>';
-    count.textContent='';
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#ff4444;padding:24px;font-size:11px">Error: '+e.message+'</td></tr>';
   }
 }
 
