@@ -276,6 +276,7 @@ function calcFee(){
 }
 
 async function createEscrow(){
+  await new Promise(r=>setTimeout(r,500));
   const s=Wallet.getState();
   if(!s.connected){toast('Connect wallet first','err');return;}
   if(!s.networkOk){toast('Switch to Nile Testnet in TronLink','err');return;}
@@ -284,8 +285,8 @@ async function createEscrow(){
   if(!seller||!seller.startsWith('T')){toast('Enter valid seller address (starts with T)','err');return;}
   if(!amount||amount<1){toast('Minimum 1 USDT','err');return;}
   if(seller===s.address){toast('Seller cannot be same as buyer','err');return;}
-  const tw = s.tronWeb || window.tronWeb;
-  if(!tw){toast('TronWeb not ready — please refresh page','err');btn.disabled=false;return;}
+  const tw = window.tronWeb;
+  if(!tw||!tw.defaultAddress?.base58){toast('TronWeb not ready — please refresh and reconnect wallet','err');btn.disabled=false;return;}
   s.tronWeb = tw;
   const units=Math.round(amount*1e6);
   const btn=document.getElementById('create-btn');
