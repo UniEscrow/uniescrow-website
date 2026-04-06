@@ -202,7 +202,21 @@ tr:hover td{background:rgba(0,255,170,.02)}
 </style>
 </head>
 <body>
-<div class="scan"></div>
+<div class="scan"></div><script>
+(function(){
+  const ADMIN_PASS = 'globalescrowx2026';
+  const key = 'gex_admin_auth';
+  if(sessionStorage.getItem(key) !== 'true'){
+    const pass = prompt('Enter admin password:');
+    if(pass !== ADMIN_PASS){
+      alert('Wrong password!');
+      window.location.href = 'index.html';
+      throw new Error('Unauthorized');
+    }
+    sessionStorage.setItem(key, 'true');
+  }
+})();
+</script>
 <nav>
   <div style="display:flex;align-items:center">
     <div class="logo">Global<span>EscrowX</span></div>

@@ -88,7 +88,21 @@ nav{background:#000;border-bottom:1px solid rgba(150,100,255,.15);padding:14px 3
 </style>
 </head>
 <body>
-<div class="scan"></div>
+<div class="scan"></div><script>
+(function(){
+  const MED_PASS = 'mediator2026';
+  const key = 'gex_med_auth';
+  if(sessionStorage.getItem(key) !== 'true'){
+    const pass = prompt('Enter mediator password:');
+    if(pass !== MED_PASS){
+      alert('Wrong password!');
+      window.location.href = 'index.html';
+      throw new Error('Unauthorized');
+    }
+    sessionStorage.setItem(key, 'true');
+  }
+})();
+</script>
 <nav>
   <div class="logo">Global<span>EscrowX</span></div>
   <div class="nav-links">
