@@ -178,7 +178,7 @@ tr:hover td{background:rgba(0,255,170,.02)}
     </div>
     <div class="table-wrap">
       <table>
-        <tr><th>Escrow ID</th><th>Seller</th><th>Amount</th><th>Status</th><th>Action</th></tr>
+        <tr><th>Transaction ID</th><th>Seller</th><th>Amount</th><th>Status</th><th>Date</th></tr>
         <tbody id="escrow-tbody"><tr><td colspan="5" style="text-align:center;color:#1a1a1a;padding:24px;font-size:11px">Connect wallet to view escrows</td></tr></tbody>
       </table>
     </div>
@@ -249,7 +249,7 @@ Wallet.onConnect((s)=>{
   sns.textContent=s.networkOk?'Correct network':'Wrong network!';
   document.getElementById('connect-wall').style.display='none';
   document.getElementById('dash-content').style.display='block';
-  loadEscrows(s);
+  loadEscrows({tronWeb:window.tronWeb,address:s.address});
   toast('✅ Connected — '+s.addressShort,'ok');
 });
 
@@ -332,33 +332,50 @@ async function createEscrow(){
 }
 
 async function loadEscrows(s){
+  const tw = window.tronWeb;
+  if(!tw) return;
+  const addr = tw.defaultAddress?.base58;
+  if(!addr) return;
   const tbody=document.getElementById('escrow-tbody');
   const count=document.getElementById('escrow-count');
-  tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#1a1a1a;padding:20px;font-size:11px">Loading from blockchain...</td></tr>';
+  tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#1a1a1a;padding:20px;font-size:11px;letter-spacing:1px">Loading from blockchain...</td></tr>';
   try{
-    const events=await s.tronWeb.getEventResult(CONTRACT,{eventName:'EscrowCreated',size:20});
-    const mine=(events||[]).filter(e=>s.tronWeb.address.fromHex(e.result?.buyer||'')===s.address);
-    if(!mine.length){
-      tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#1a1a1a;padding:24px;font-size:11px">No escrows yet. Create your first one above!</td></tr>';
-      count.textContent='0 escrows';return;
+    const resp = await fetch('https://nile.trongrid.io/v1/contracts/'+CONTRACT+'/events?event_name=EscrowCreated&limit=50&order_by=block_timestamp,desc');
+    const data = await resp.json();
+    const events = (data.data||[]).filter(e=>{
+      try{
+        const buyer = tw.address.fromHex('41'+e.result?.buyer?.slice(2));
+        return buyer === addr;
+      }catch{return false;}
+    });
+    if(!events.length){
+      tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#1a1a1a;padding:24px;font-size:11px;letter-spacing:1px">No escrows yet. Create your first one above!</td></tr>';
+      count.textContent='0 escrows';
+      return;
     }
-    count.textContent=mine.length+' escrow'+(mine.length!==1?'s':'');
+    count.textContent=events.length+' escrow'+(events.length!==1?'s':'');
     tbody.innerHTML='';
-    for(const ev of mine){
-      const escrowId='0x'+(ev.result?.id||ev.transaction);
-      let stateNum=0;
-      try{const esc=await s.tronWeb.contract(ESCROW_ABI,CONTRACT);const d=await esc.getEscrow(escrowId).call();stateNum=Number(d.state);}catch{}
-      const label=STATES[stateNum]||'Unknown';
-      const bc=stateNum===1?'b-funded':stateNum===2?'b-active':stateNum===4?'b-dispute':'b-done';
-      const amt=(Number(ev.result?.amount||0)/1e6).toFixed(2);
-      const sel=s.tronWeb.address.fromHex(ev.result?.seller||'')||'-';
-      const sh=(a)=>a.slice(0,6)+'...'+a.slice(-4);
-      const link='https://nile.tronscan.org/#/transaction/'+ev.transaction;
+    for(const ev of events){
+      const txId = ev.transaction_id||'';
+      const amount = (Number(ev.result?.amount||0)/1e6).toFixed(2);
+      let sellerAddr = '-';
+      try{sellerAddr = tw.address.fromHex('41'+ev.result?.seller?.slice(2));}catch{}
+      const sh=(a)=>a&&a.length>10?a.slice(0,6)+'...'+a.slice(-4):a;
+      const escrowId = ev.result?.id||txId;
+      const link='https://nile.tronscan.org/#/transaction/'+txId;
+      const date = ev.block_timestamp ? new Date(ev.block_timestamp).toLocaleDateString() : '-';
       const tr=document.createElement('tr');
-      tr.innerHTML='<td class="mono"><a href="'+link+'" target="_blank" style="color:#4d9fff;text-decoration:none">'+sh(escrowId)+'↗</a></td><td class="mono">'+sh(sel)+'</td><td style="color:#00ffaa;font-weight:700">'+amt+' USDT</td><td><span class="badge '+bc+'">'+label.toUpperCase()+'</span></td><td>'+(stateNum===4?'<span style="color:#333;font-size:11px">DONE</span>':'<span class="action">VIEW →</span>')+'</td>';
+      tr.innerHTML=`
+        <td class="mono"><a href="${link}" target="_blank" style="color:#4d9fff;text-decoration:none">${sh(txId)}↗</a></td>
+        <td class="mono">${sh(sellerAddr)}</td>
+        <td style="color:#00ffaa;font-weight:700">${amount} USDT</td>
+        <td><span class="badge b-funded">FUNDED</span></td>
+        <td>${date}</td>
+      `;
       tbody.appendChild(tr);
     }
   }catch(e){
+    console.error('[LoadEscrows]',e);
     tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#1a1a1a;padding:24px;font-size:11px">Could not load escrows. Try refreshing.</td></tr>';
     count.textContent='';
   }
