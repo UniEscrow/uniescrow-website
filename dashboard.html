@@ -93,6 +93,9 @@ tr:hover td{background:rgba(0,255,170,.02)}
 .b-done{background:#080808;color:#333;border:1px solid #111}
 .b-dispute{background:rgba(255,68,68,.1);color:#ff4444;border:1px solid rgba(255,68,68,.3)}
 .action{color:#00ffaa;font-size:11px;cursor:pointer;font-weight:700}
+.release-btn{background:rgba(0,255,170,.08);color:#00ffaa;border:1px solid rgba(0,255,170,.25);padding:6px 14px;border-radius:4px;font-size:10px;font-weight:800;cursor:pointer;letter-spacing:.5px;transition:all .3s}
+.release-btn:hover{background:rgba(0,255,170,.15);box-shadow:0 0 14px rgba(0,255,170,.2)}
+.release-btn:disabled{opacity:.5;cursor:wait}
 .toast{position:fixed;bottom:24px;right:24px;z-index:9999;padding:14px 18px;border-radius:8px;font-size:12px;font-family:-apple-system,sans-serif;max-width:320px;line-height:1.5;animation:tin .3s ease}
 @keyframes tin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .t-ok{background:#0a1f0a;border:1px solid rgba(0,255,170,.3);color:#00ffaa}
@@ -178,7 +181,7 @@ tr:hover td{background:rgba(0,255,170,.02)}
     </div>
     <div class="table-wrap">
       <table>
-        <tr><th>Transaction ID</th><th>Seller</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+        <tr><th>Transaction ID</th><th>Seller</th><th>Amount</th><th>Status</th><th>Date</th><th>Action</th></tr>
         <tbody id="escrow-tbody"><tr><td colspan="5" style="text-align:center;color:#1a1a1a;padding:24px;font-size:11px">Connect wallet to view escrows</td></tr></tbody>
       </table>
     </div>
@@ -189,7 +192,7 @@ tr:hover td{background:rgba(0,255,170,.02)}
 <script>
 const CONTRACT = 'TH1T3g29FFJYMJckutWnrUaDTDifV9vFYY';
 const USDT_ADDR = 'TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf';
-const ESCROW_ABI=[{inputs:[{name:'seller',type:'address'},{name:'amount',type:'uint256'}],name:'createEscrow',outputs:[{name:'',type:'bytes32'}],type:'function'},{inputs:[{name:'id',type:'bytes32'}],name:'fundEscrow',outputs:[],type:'function'},{inputs:[{name:'id',type:'bytes32'}],name:'getEscrow',outputs:[{name:'buyer',type:'address'},{name:'seller',type:'address'},{name:'amount',type:'uint256'},{name:'state',type:'uint8'}],type:'function'}];
+const ESCROW_ABI=[{inputs:[{name:'seller',type:'address'},{name:'amount',type:'uint256'}],name:'createEscrow',outputs:[{name:'',type:'bytes32'}],type:'function'},{inputs:[{name:'id',type:'bytes32'}],name:'fundEscrow',outputs:[],type:'function'},{inputs:[{name:'id',type:'bytes32'}],name:'getEscrow',outputs:[{name:'buyer',type:'address'},{name:'seller',type:'address'},{name:'amount',type:'uint256'},{name:'state',type:'uint8'}],type:'function'},{inputs:[{name:'id',type:'bytes32'}],name:'release',outputs:[],type:'function'},{inputs:[{name:'id',type:'bytes32'}],name:'activate',outputs:[],type:'function'},{inputs:[{name:'id',type:'bytes32'}],name:'complete',outputs:[],type:'function'}];
 const USDT_ABI=[{constant:false,inputs:[{name:'spender',type:'address'},{name:'amount',type:'uint256'}],name:'approve',outputs:[{name:'',type:'bool'}],type:'function'}];
 const STATES=['Created','Funded','Active','Complete','Released','Refunded'];
 
@@ -338,7 +341,7 @@ async function loadEscrows(s){
   if(!addr) return;
   const tbody=document.getElementById('escrow-tbody');
   const count=document.getElementById('escrow-count');
-  tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#1a1a1a;padding:20px;font-size:11px;letter-spacing:1px">Loading from blockchain...</td></tr>';
+  tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#1a1a1a;padding:20px;font-size:11px;letter-spacing:1px">Loading from blockchain...</td></tr>';
   try{
     const resp = await fetch('https://nile.trongrid.io/v1/contracts/'+CONTRACT+'/events?event_name=EscrowCreated&limit=50&order_by=block_timestamp,desc');
     const data = await resp.json();
@@ -349,7 +352,7 @@ async function loadEscrows(s){
       }catch{return false;}
     });
     if(!events.length){
-      tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#1a1a1a;padding:24px;font-size:11px;letter-spacing:1px">No escrows yet. Create your first one above!</td></tr>';
+      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#1a1a1a;padding:24px;font-size:11px;letter-spacing:1px">No escrows yet. Create your first one above!</td></tr>';
       count.textContent='0 escrows';
       return;
     }
@@ -361,23 +364,174 @@ async function loadEscrows(s){
       let sellerAddr = '-';
       try{sellerAddr = tw.address.fromHex('41'+ev.result?.seller?.slice(2));}catch{}
       const sh=(a)=>a&&a.length>10?a.slice(0,6)+'...'+a.slice(-4):a;
-      const escrowId = ev.result?.id||txId;
+      const rawId = ev.result?.id||'';
+      const escrowId = rawId.startsWith('0x')?rawId:'0x'+rawId;
       const link='https://nile.tronscan.org/#/transaction/'+txId;
       const date = ev.block_timestamp ? new Date(ev.block_timestamp).toLocaleDateString() : '-';
+
+      // Read real state from blockchain
+      let stateNum = 1; // default funded
+      let stateLabel = 'FUNDED';
+      let badgeClass = 'b-funded';
+      try{
+        const escContract = await tw.contract(ESCROW_ABI, CONTRACT);
+        const escData = await escContract.getEscrow(escrowId).call();
+        stateNum = Number(escData.state||escData[3]||1);
+        const stateMap = {0:'CREATED',1:'FUNDED',2:'ACTIVE',3:'COMPLETE',4:'RELEASED',5:'REFUNDED'};
+        const badgeMap = {0:'b-funded',1:'b-funded',2:'b-active',3:'b-active',4:'b-done',5:'b-done'};
+        stateLabel = stateMap[stateNum]||'FUNDED';
+        badgeClass = badgeMap[stateNum]||'b-funded';
+      }catch(e){
+        console.warn('Could not read escrow state:',e.message);
+      }
+
+      // Determine action button
+      let actionHtml = '';
+      const safeId = escrowId.replace(/[^a-zA-Z0-9x]/g,'');
+      if(stateNum === 1 || stateNum === 2 || stateNum === 3){
+        // Eligible for release
+        actionHtml = `<button class="release-btn" id="rbtn-${safeId}" onclick="releasePayment('${escrowId}','${amount}','${sellerAddr}',this)">RELEASE →</button>`;
+      } else if(stateNum === 4){
+        actionHtml = '<span style="color:#00ffaa;font-size:10px;font-weight:700">✓ RELEASED</span>';
+      } else if(stateNum === 5){
+        actionHtml = '<span style="color:#333;font-size:10px">REFUNDED</span>';
+      } else {
+        actionHtml = '<span style="color:#333;font-size:10px">—</span>';
+      }
+
       const tr=document.createElement('tr');
+      tr.id = 'row-'+safeId;
       tr.innerHTML=`
         <td class="mono"><a href="${link}" target="_blank" style="color:#4d9fff;text-decoration:none">${sh(txId)}↗</a></td>
         <td class="mono">${sh(sellerAddr)}</td>
         <td style="color:#00ffaa;font-weight:700">${amount} USDT</td>
-        <td><span class="badge b-funded">FUNDED</span></td>
-        <td>${date}</td>
+        <td id="status-${safeId}"><span class="badge ${badgeClass}">${stateLabel}</span></td>
+        <td style="color:#1a1a1a;font-size:11px">${date}</td>
+        <td>${actionHtml}</td>
       `;
       tbody.appendChild(tr);
     }
   }catch(e){
     console.error('[LoadEscrows]',e);
-    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#1a1a1a;padding:24px;font-size:11px">Could not load escrows. Try refreshing.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#1a1a1a;padding:24px;font-size:11px">Could not load escrows. Try refreshing.</td></tr>';
     count.textContent='';
+  }
+}
+
+async function releasePayment(escrowId, amount, sellerAddr, btn){
+  const tw = window.tronWeb;
+  if(!tw||!tw.defaultAddress?.base58){toast('Wallet not connected','err');return;}
+
+  // Confirm with user
+  const confirm = window.confirm(
+    'Release ' + amount + ' USDT to seller?\n\n' +
+    'Seller: ' + sellerAddr + '\n' +
+    'They will receive: ' + (parseFloat(amount)*0.98).toFixed(2) + ' USDT\n' +
+    'Platform fee: ' + (parseFloat(amount)*0.02).toFixed(2) + ' USDT\n\n' +
+    'This cannot be undone!'
+  );
+  if(!confirm) return;
+
+  const safeId = escrowId.replace(/[^a-zA-Z0-9x]/g,'');
+  const statusEl = document.getElementById('status-'+safeId);
+
+  // Loading state
+  btn.disabled = true;
+  btn.textContent = 'RELEASING...';
+  btn.style.background = 'rgba(0,255,170,.1)';
+  btn.style.color = '#00ffaa';
+  if(statusEl) statusEl.innerHTML = '<span class="badge" style="background:rgba(255,200,0,.1);color:#ffcc00;border:1px solid rgba(255,200,0,.3)">PENDING...</span>';
+
+  try{
+    const addr = tw.defaultAddress.base58;
+
+    // Call release() on smart contract
+    const releaseParam = [{type:'bytes32', value: escrowId}];
+    const tx = await tw.transactionBuilder.triggerSmartContract(
+      CONTRACT,
+      'release(bytes32)',
+      {feeLimit: 150000000},
+      releaseParam,
+      addr
+    );
+
+    if(!tx||!tx.transaction){throw new Error('Failed to build transaction');}
+
+    // Pending state — waiting for TronLink signature
+    btn.textContent = 'SIGN IN TRONLINK...';
+    const signed = await tw.trx.sign(tx.transaction);
+
+    // Broadcasting
+    btn.textContent = 'BROADCASTING...';
+    const result = await tw.trx.sendRawTransaction(signed);
+
+    if(!result||!result.result){
+      throw new Error('Transaction rejected: '+(result?.message||'unknown error'));
+    }
+
+    // Waiting for confirmation
+    btn.textContent = 'CONFIRMING...';
+    if(statusEl) statusEl.innerHTML = '<span class="badge" style="background:rgba(255,200,0,.1);color:#ffcc00;border:1px solid rgba(255,200,0,.3)">CONFIRMING...</span>';
+
+    // Wait for blockchain confirmation
+    let confirmed = false;
+    for(let i=0;i<20;i++){
+      await new Promise(r=>setTimeout(r,3000));
+      try{
+        const info = await tw.trx.getTransactionInfo(result.txid);
+        if(info&&info.blockNumber){
+          if(info.receipt&&info.receipt.result==='REVERT'){
+            throw new Error('Transaction reverted on blockchain');
+          }
+          confirmed = true;
+          break;
+        }
+      }catch(e){if(e.message.includes('REVERT'))throw e;}
+    }
+
+    if(!confirmed){throw new Error('Transaction timeout — check Tronscan');}
+
+    // SUCCESS state
+    btn.textContent = '✓ RELEASED';
+    btn.style.background = 'rgba(0,255,170,.1)';
+    btn.style.color = '#00ffaa';
+    btn.style.border = '1px solid rgba(0,255,170,.3)';
+    btn.style.cursor = 'default';
+    if(statusEl) statusEl.innerHTML = '<span class="badge b-done">RELEASED</span>';
+
+    // Replace button with released text
+    setTimeout(()=>{
+      btn.outerHTML = '<span style="color:#00ffaa;font-size:10px;font-weight:700">✓ RELEASED</span>';
+    }, 2000);
+
+    toast('Payment released! '+( parseFloat(amount)*0.98).toFixed(2)+' USDT sent to seller','ok');
+
+    // Refresh balances
+    Wallet.refreshBalances();
+
+    // Show tronscan link
+    const txLink = 'https://nile.tronscan.org/#/transaction/'+result.txid;
+    const toastEl = document.createElement('div');
+    toastEl.className = 'toast t-info';
+    toastEl.innerHTML = 'View transaction: <a href="'+txLink+'" target="_blank" style="color:#4d9fff">Tronscan ↗</a>';
+    document.body.appendChild(toastEl);
+    setTimeout(()=>toastEl.remove(), 8000);
+
+  }catch(e){
+    console.error('[Release]',e);
+    const msg = e.message?.includes('REVERT') ? 'Contract reverted — you may not have permission to release this escrow' :
+                e.message?.includes('Confirmation') ? 'User cancelled in TronLink' :
+                e.message || 'Unknown error';
+
+    // Failed state
+    btn.disabled = false;
+    btn.textContent = 'RETRY →';
+    btn.style.background = 'rgba(255,68,68,.1)';
+    btn.style.color = '#ff4444';
+    btn.style.border = '1px solid rgba(255,68,68,.3)';
+    if(statusEl) statusEl.innerHTML = '<span class="badge b-dispute">FAILED</span>';
+
+    toast('Release failed: '+msg,'err');
   }
 }
 
