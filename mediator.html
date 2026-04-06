@@ -90,6 +90,19 @@ nav{background:#000;border-bottom:1px solid rgba(150,100,255,.15);padding:14px 3
 <body>
 <div class="scan"></div><script>
 (function(){
+  const SECRET = 'gex-mediator-4p8n1q';
+  const stored = sessionStorage.getItem('gex_med');
+  if(stored !== SECRET){
+    const pass = prompt('Mediator Access Required:');
+    if(pass !== 'mediator2026'){
+      document.body.innerHTML = '<div style="background:#000;color:#ff4444;height:100vh;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:14px">403 — Access Denied</div>';
+      throw new Error('Unauthorized');
+    }
+    sessionStorage.setItem('gex_med', SECRET);
+  }
+})();
+</script><script>
+(function(){
   const MED_PASS = 'mediator2026';
   const key = 'gex_med_auth';
   if(sessionStorage.getItem(key) !== 'true'){

@@ -204,6 +204,19 @@ tr:hover td{background:rgba(0,255,170,.02)}
 <body>
 <div class="scan"></div><script>
 (function(){
+  const SECRET = 'gex-owner-9x7k2m';
+  const stored = sessionStorage.getItem('gex_admin');
+  if(stored !== SECRET){
+    const pass = prompt('Owner Access Required:');
+    if(pass !== 'globalescrowx2026'){
+      document.body.innerHTML = '<div style="background:#000;color:#ff4444;height:100vh;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:14px">403 — Access Denied</div>';
+      throw new Error('Unauthorized');
+    }
+    sessionStorage.setItem('gex_admin', SECRET);
+  }
+})();
+</script><script>
+(function(){
   const ADMIN_PASS = 'globalescrowx2026';
   const key = 'gex_admin_auth';
   if(sessionStorage.getItem(key) !== 'true'){
@@ -516,7 +529,7 @@ tr:hover td{background:rgba(0,255,170,.02)}
     <div class="three-col">
       <a href="index.html" style="text-decoration:none"><div style="background:#000;border:1px solid #0d0d0d;border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='rgba(0,255,170,.3)'" onmouseout="this.style.borderColor='#0d0d0d'"><div style="font-size:20px;margin-bottom:8px">🌍</div><div style="font-size:12px;font-weight:700;color:#00ffaa">Main Website</div><div style="font-size:10px;color:#1a1a1a;margin-top:3px">globalescrowx.com</div></div></a>
       <a href="dashboard.html" style="text-decoration:none"><div style="background:#000;border:1px solid #0d0d0d;border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='rgba(0,255,170,.3)'" onmouseout="this.style.borderColor='#0d0d0d'"><div style="font-size:20px;margin-bottom:8px">📊</div><div style="font-size:12px;font-weight:700;color:#00ffaa">User Dashboard</div><div style="font-size:10px;color:#1a1a1a;margin-top:3px">dashboard.html</div></div></a>
-      <a href="mediator.html" style="text-decoration:none"><div style="background:#000;border:1px solid #0d0d0d;border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='rgba(150,100,255,.3)'" onmouseout="this.style.borderColor='#0d0d0d'"><div style="font-size:20px;margin-bottom:8px">⚖</div><div style="font-size:12px;font-weight:700;color:#9966ff">Mediator Panel</div><div style="font-size:10px;color:#1a1a1a;margin-top:3px">mediator.html</div></div></a>
+      
     </div>
   </div>
 </div>
