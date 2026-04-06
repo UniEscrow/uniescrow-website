@@ -276,51 +276,58 @@ function calcFee(){
 }
 
 async function createEscrow(){
-  await new Promise(r=>setTimeout(r,500));
-  const s=Wallet.getState();
-  if(!s.connected){toast('Connect wallet first','err');return;}
-  if(!s.networkOk){toast('Switch to Nile Testnet in TronLink','err');return;}
+  const tw = window.tronWeb;
+  if(!tw||!tw.ready){toast('TronLink not ready — please refresh page','err');return;}
+  const addr = tw.defaultAddress?.base58;
+  if(!addr){toast('Wallet not connected','err');return;}
   const seller=document.getElementById('seller').value.trim();
   const amount=parseFloat(document.getElementById('amount').value);
-  if(!seller||!seller.startsWith('T')){toast('Enter valid seller address (starts with T)','err');return;}
+  if(!seller||!seller.startsWith('T')){toast('Enter valid seller address','err');return;}
   if(!amount||amount<1){toast('Minimum 1 USDT','err');return;}
-  if(seller===s.address){toast('Seller cannot be same as buyer','err');return;}
-  const tw = window.tronWeb;
-  if(!tw||!tw.defaultAddress?.base58){toast('TronWeb not ready — please refresh and reconnect wallet','err');btn.disabled=false;return;}
-  s.tronWeb = tw;
+  if(seller===addr){toast('Seller cannot be same as buyer','err');return;}
   const units=Math.round(amount*1e6);
   const btn=document.getElementById('create-btn');
   const st=document.getElementById('create-status');
   btn.disabled=true;
   try{
-    setStatus(st,'⏳ Step 1/3 — Approving USDT...');
-    const usdt=await s.tronWeb.contract(USDT_ABI,USDT_ADDR);
-    const appTx=await usdt.approve(CONTRACT,units).send({feeLimit:50000000});
-    setStatus(st,'⏳ Waiting for approval...');
-    await waitTx(s.tronWeb,appTx);
-    setStatus(st,'⏳ Step 2/3 — Creating escrow...');
-    const esc=await s.tronWeb.contract(ESCROW_ABI,CONTRACT);
-    const createTx=await esc.createEscrow(seller,units).send({feeLimit:200000000});
-    setStatus(st,'⏳ Waiting for escrow creation...');
-    const info=await waitTx(s.tronWeb,createTx);
-    setStatus(st,'⏳ Step 3/3 — Funding escrow...');
-    const escrowId='0x'+(info.log?.[0]?.topics?.[1]||'0'.repeat(64));
-    const fundTx=await esc.fundEscrow(escrowId).send({feeLimit:150000000});
-    await waitTx(s.tronWeb,fundTx);
-    setStatus(st,'✅ Done! '+amount+' USDT locked on blockchain.');
-    toast('🎉 Escrow created! '+amount+' USDT locked','ok');
+    setStatus(st,'Step 1/3 — Approving USDT...');
+    const appParam = [{type:'address',value:CONTRACT},{type:'uint256',value:units}];
+    const appTx = await tw.transactionBuilder.triggerSmartContract(USDT_ADDR,'approve(address,uint256)',{feeLimit:50000000},appParam,addr);
+    const appSigned = await tw.trx.sign(appTx.transaction);
+    const appResult = await tw.trx.sendRawTransaction(appSigned);
+    if(!appResult.result){throw new Error('Approval failed');}
+    setStatus(st,'Waiting for approval... (30 sec)');
+    await new Promise(r=>setTimeout(r,30000));
+    setStatus(st,'Step 2/3 — Creating escrow...');
+    const sellerHex = tw.address.toHex(seller);
+    const createParam = [{type:'address',value:sellerHex},{type:'uint256',value:units}];
+    const createTx = await tw.transactionBuilder.triggerSmartContract(CONTRACT,'createEscrow(address,uint256)',{feeLimit:200000000},createParam,addr);
+    const createSigned = await tw.trx.sign(createTx.transaction);
+    const createResult = await tw.trx.sendRawTransaction(createSigned);
+    if(!createResult.result){throw new Error('Create escrow failed');}
+    setStatus(st,'Waiting for confirmation... (30 sec)');
+    await new Promise(r=>setTimeout(r,30000));
+    setStatus(st,'Step 3/3 — Funding escrow...');
+    const txInfo = await tw.trx.getTransactionInfo(createResult.txid);
+    const escrowId = txInfo.log?.[0]?.topics?.[1]||('0x'+createResult.txid);
+    const fundParam = [{type:'bytes32',value:escrowId}];
+    const fundTx = await tw.transactionBuilder.triggerSmartContract(CONTRACT,'fundEscrow(bytes32)',{feeLimit:150000000},fundParam,addr);
+    const fundSigned = await tw.trx.sign(fundTx.transaction);
+    const fundResult = await tw.trx.sendRawTransaction(fundSigned);
+    if(!fundResult.result){throw new Error('Fund escrow failed');}
+    setStatus(st,'Done! '+amount+' USDT locked on blockchain!');
+    toast('Escrow created! '+amount+' USDT locked','ok');
     document.getElementById('seller').value='';
     document.getElementById('amount').value='';
     document.getElementById('desc').value='';
     calcFee();
-    setTimeout(()=>loadEscrows(s),3000);
+    setTimeout(()=>loadEscrows({tronWeb:tw,address:addr}),5000);
   }catch(e){
-    const msg=e.message?.includes('REVERT')?'Transaction reverted — check USDT balance':e.message||'Unknown error';
-    setStatus(st,'❌ '+msg);
-    toast('❌ '+msg,'err');
+    console.error(e);
+    setStatus(st,'Error: '+e.message);
+    toast('Error: '+e.message,'err');
   }finally{
     btn.disabled=false;
-    Wallet.refreshBalances();
   }
 }
 
