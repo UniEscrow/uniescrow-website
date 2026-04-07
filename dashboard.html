@@ -183,7 +183,84 @@ tr:hover td{background:rgba(0,255,170,.02)}
   </div>
 </div>
 
-<script src="wallet.js"></script>
+<script>
+const Wallet=(()=>{
+  let state={connected:false,address:null,addressShort:null,network:null,networkName:'Unknown',networkOk:false,trxBalance:'0.00',usdtBalance:'0.00',tronWeb:null};
+  let _oc=()=>{},_od=()=>{},_ob=()=>{};
+  const short=a=>a?a.slice(0,6)+'...'+a.slice(-4):'';
+  const detectNet=tw=>{
+    try{
+      const h=(tw.fullNode&&tw.fullNode.host)||'';
+      if(h.includes('nile'))return{name:'Nile Testnet',ok:true};
+      if(h.includes('shasta'))return{name:'Shasta Testnet',ok:false};
+      return{name:'Tron Mainnet',ok:false};
+    }catch{return{name:'Nile Testnet',ok:true};}
+  };
+  const readBal=async(tw,addr)=>{
+    try{const r=await tw.trx.getBalance(addr);return{trx:(Number(r)/1e6).toFixed(2),usdt:'0.00'};}
+    catch{return{trx:'0.00',usdt:'0.00'};}
+  };
+  const showNoWallet=()=>{
+    const m=document.createElement('div');
+    m.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center';
+    m.innerHTML='<div style="background:#050a05;border:2px solid #00ffaa;border-radius:14px;padding:32px;max-width:340px;text-align:center;color:#fff"><div style="font-size:48px;margin-bottom:16px">🔗</div><div style="font-size:18px;font-weight:800;color:#00ffaa;margin-bottom:12px">TronLink Not Found</div><p style="color:#888;font-size:13px;margin-bottom:20px">You need TronLink Chrome extension to use GlobalEscrowX.</p><a href="https://chromewebstore.google.com/detail/tronlink/ibnejdfjmmkpcnlpebklmnkoeoihofec" target="_blank" style="display:block;background:#00ffaa;color:#000;padding:12px;border-radius:6px;font-size:12px;font-weight:800;text-decoration:none;margin-bottom:10px">INSTALL TRONLINK FREE →</a><button onclick="this.closest('div').parentElement.remove()" style="background:none;border:none;color:#555;cursor:pointer;font-size:12px">Dismiss</button></div>';
+    document.body.appendChild(m);
+  };
+  const showWrongNet=name=>{
+    document.getElementById('gex-wn')&&document.getElementById('gex-wn').remove();
+    const b=document.createElement('div');
+    b.id='gex-wn';
+    b.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#c0392b;color:#fff;padding:12px 24px;font-size:12px;font-weight:700;display:flex;justify-content:space-between;align-items:center';
+    b.innerHTML='<span>⚠️ Wrong Network: '+name+' — Switch to Nile Testnet in TronLink</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px">✕</button>';
+    document.body.appendChild(b);
+  };
+  const connect=async()=>{
+    if(!window.tronLink&&!window.tronWeb){showNoWallet();return null;}
+    try{
+      if(window.tronLink&&window.tronLink.request){
+        try{await window.tronLink.request({method:'tron_requestAccounts'});}catch{}
+      }
+      let tw=null,tries=0;
+      while(tries<20){
+        await new Promise(r=>setTimeout(r,500));
+        if(window.tronWeb&&window.tronWeb.defaultAddress&&window.tronWeb.defaultAddress.base58){tw=window.tronWeb;break;}
+        tries++;
+      }
+      if(!tw){alert('TronLink not responding. Please open TronLink, unlock it, and try again.');return null;}
+      const address=tw.defaultAddress.base58;
+      const net=detectNet(tw);
+      const bal=await readBal(tw,address);
+      state={connected:true,address,addressShort:short(address),network:net.name,networkName:net.name,networkOk:net.ok,trxBalance:bal.trx,usdtBalance:bal.usdt,tronWeb:tw};
+      sessionStorage.setItem('gex_addr',address);
+      _oc(state);
+      if(!net.ok)showWrongNet(net.name);
+      else{document.getElementById('gex-wn')&&document.getElementById('gex-wn').remove();}
+      return state;
+    }catch(e){console.error('[Wallet]',e);alert('Wallet error: '+e.message);return null;}
+  };
+  const disconnect=()=>{
+    state={connected:false,address:null,addressShort:null,network:null,networkName:'Unknown',networkOk:false,trxBalance:'0.00',usdtBalance:'0.00',tronWeb:null};
+    sessionStorage.removeItem('gex_addr');
+    document.getElementById('gex-wn')&&document.getElementById('gex-wn').remove();
+    _od();
+  };
+  const refreshBalances=async()=>{
+    if(!state.connected||!state.tronWeb)return;
+    try{const b=await readBal(state.tronWeb,state.address);state.trxBalance=b.trx;state.usdtBalance=b.usdt;_ob(state);}catch{}
+  };
+  const init=async()=>{
+    const saved=sessionStorage.getItem('gex_addr');
+    if(saved){
+      await new Promise(r=>setTimeout(r,1000));
+      if(window.tronWeb&&window.tronWeb.defaultAddress&&window.tronWeb.defaultAddress.base58){
+        await connect();
+      }
+    }
+    setInterval(refreshBalances,30000);
+  };
+  return{init,connect,disconnect,refreshBalances,getState:()=>({...state}),isConnected:()=>state.connected,onConnect:f=>{_oc=f;},onDisconnect:f=>{_od=f;},onBalance:f=>{_ob=f;}};
+})();
+</script>
 <script>
 const CONTRACT  = 'TH1T3g29FFJYMJckutWnrUaDTDifV9vFYY';
 const USDT_ADDR = 'TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf';
