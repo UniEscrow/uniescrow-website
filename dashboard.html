@@ -76,7 +76,7 @@ td{padding:12px;border-bottom:1px solid #080808;font-size:12px;color:#555}
     <a class="nl" href="admin.html">Admin</a>
     <a class="nl" href="index.html">Site</a>
   </div>
-  <button class="wbtn wbtn-off" id="wbtn" onclick="if(typeof handleWallet!=='undefined')handleWallet();else alert('Page still loading, please wait 2 seconds and try again')">CONNECT WALLET</button>
+  <button class="wbtn wbtn-off" id="wbtn" id="connect-wall-btn">CONNECT WALLET</button>
 </nav>
 
 <div class="container">
@@ -84,7 +84,7 @@ td{padding:12px;border-bottom:1px solid #080808;font-size:12px;color:#555}
     <div style="font-size:48px">🔗</div>
     <h2>Connect your wallet</h2>
     <p>Connect your TronLink wallet to create and manage escrows on the Tron blockchain.</p>
-    <button class="cw-btn" onclick="if(typeof handleWallet!=='undefined')handleWallet();else alert('Page still loading, please wait 2 seconds and try again')">CONNECT TRONLINK</button>
+    <button class="cw-btn" id="connect-wall-btn">CONNECT TRONLINK</button>
     <div style="font-size:11px;color:#1a1a1a">Need TronLink? <a href="https://www.tronlink.org" target="_blank" style="color:#00ffaa">Install free →</a></div>
   </div>
 
@@ -111,7 +111,7 @@ td{padding:12px;border-bottom:1px solid #080808;font-size:12px;color:#555}
         Fee (2%):<span id="f-f">0 USDT</span>
         Seller gets:<span id="f-s">0 USDT</span>
       </div>
-      <button class="cbtn" id="cbtn" onclick="createEscrow()">CREATE ESCROW ON TRON</button>
+      <button class="cbtn" id="cbtn">CREATE ESCROW ON TRON</button>
       <div class="cst" id="cst"></div>
     </div>
 
@@ -412,6 +412,23 @@ window.addEventListener('load',async()=>{
   const saved=sessionStorage.getItem('gex_addr');
   if(saved&&window.tronWeb&&window.tronWeb.defaultAddress&&window.tronWeb.defaultAddress.base58){
     await connectWallet();
+  }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var wbtn = document.getElementById('wbtn');
+  var cwbtn = document.getElementById('connect-wall-btn');
+  var cbtn = document.getElementById('cbtn');
+  if(wbtn) wbtn.addEventListener('click', function(){ connectWallet(); });
+  if(cwbtn) cwbtn.addEventListener('click', function(){ connectWallet(); });
+  if(cbtn) cbtn.addEventListener('click', function(){ createEscrow(); });
+  
+  // Auto reconnect
+  var saved = sessionStorage.getItem('gex_addr');
+  if(saved && window.tronWeb && window.tronWeb.defaultAddress && window.tronWeb.defaultAddress.base58){
+    connectWallet();
   }
 });
 </script>
