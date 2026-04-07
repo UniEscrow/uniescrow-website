@@ -48,7 +48,7 @@ nav{background:#000;border-bottom:1px solid rgba(0,255,170,.12);padding:0 32px;d
 .container{max-width:1100px;margin:0 auto;padding:28px 32px}
 .page-title{font-size:22px;font-weight:800;margin-bottom:4px}
 .page-sub{font-size:13px;color:#2a2a2a;margin-bottom:24px}
-.cwall{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center;gap:16px}
+.cwall{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center;gap:16px}
 .cw-icon{font-size:48px}
 .cw-title{font-size:20px;font-weight:800;color:#00ffaa}
 .cw-sub{font-size:13px;color:#2a2a2a;line-height:1.7;max-width:360px}
@@ -478,9 +478,13 @@ function toast(msg,type){
   setTimeout(function(){t.remove();},4000);
 }
 
-document.getElementById('cwall').style.display='flex';
-document.getElementById('dcontent').style.display='none';
-Wallet.init();
+
+if(typeof Wallet !== 'undefined'){
+  Wallet.init();
+} else {
+  console.error('wallet.js not loaded!');
+  document.getElementById('cwall').style.display='flex';
+}
 </script>
 </body>
 </html>
