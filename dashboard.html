@@ -4,6 +4,243 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GlobalEscrowX - Dashboard</title>
+<script>
+function connectWallet(){
+  var btn=document.getElementById('wbtn');
+  var cwbtn=document.getElementById('cwbtn');
+  btn.textContent='CONNECTING...';
+  btn.disabled=true;
+  if(cwbtn){cwbtn.textContent='CONNECTING...';cwbtn.disabled=true;}
+  if(!window.tronLink && !window.tronWeb){
+    alert('TronLink not found! Please install TronLink from tronlink.org');
+    btn.textContent='CONNECT WALLET';btn.disabled=false;
+    if(cwbtn){cwbtn.textContent='CONNECT TRONLINK';cwbtn.disabled=false;}
+    return;
+  }
+  var req=window.tronLink&&window.tronLink.request?window.tronLink.request({method:'tron_requestAccounts'}):Promise.resolve();
+  req.catch(function(){}).finally(function(){
+    var tries=0;
+    var check=setInterval(function(){
+      tries++;
+      var tw=window.tronWeb;
+      if(tw&&tw.defaultAddress&&tw.defaultAddress.base58){
+        clearInterval(check);
+        onConnected(tw);
+      } else if(tries>20){
+        clearInterval(check);
+        alert('Could not connect. Please unlock TronLink and try again.');
+        btn.textContent='CONNECT WALLET';btn.disabled=false;
+        if(cwbtn){cwbtn.textContent='CONNECT TRONLINK';cwbtn.disabled=false;}
+      }
+    },500);
+  });
+}
+
+function onConnected(tw){
+  var addr=tw.defaultAddress.base58;
+  var short=addr.slice(0,6)+'...'+addr.slice(-4);
+  var host=(tw.fullNode&&tw.fullNode.host)||'';
+  var isNile=host.includes('nile');
+  var netName=isNile?'Nile Testnet':host.includes('shasta')?'Shasta':'Tron Mainnet';
+  sessionStorage.setItem('gex_addr',addr);
+  document.getElementById('wbtn').textContent=short;
+  document.getElementById('wbtn').className='wbtn wbtn-on';
+  document.getElementById('wbtn').disabled=false;
+  document.getElementById('s-addr').textContent=short;
+  document.getElementById('s-net').textContent=(isNile?'Nile Testnet':'⚠ '+netName);
+  document.getElementById('s-net').style.color=isNile?'#00ffaa':'#ff4444';
+  document.getElementById('s-nets').textContent=isNile?'Correct network':'Wrong! Switch to Nile';
+  tw.trx.getBalance(addr).then(function(r){
+    var trx=(Number(r)/1e6).toFixed(2);
+    document.getElementById('s-trx').textContent=trx+' TRX';
+    document.getElementById('s-usdt').textContent='0.00 USDT';
+  }).catch(function(){});
+  document.getElementById('cwall').style.display='none';
+  document.getElementById('dcontent').style.display='block';
+  if(!isNile){showWrongNet(netName);}
+  toast('Connected: '+short,'ok');
+  loadEscrows(tw,addr);
+}
+
+function showWrongNet(name){
+  var old=document.getElementById('wn-bar');
+  if(old)old.remove();
+  var b=document.createElement('div');
+  b.id='wn-bar';
+  b.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#c0392b;color:#fff;padding:12px 24px;font-size:12px;font-weight:700;display:flex;justify-content:space-between;z-index:9999';
+  b.innerHTML='<span>Wrong Network: '+name+' — Switch to Nile Testnet in TronLink</span><button onclick="document.getElementById('wn-bar').remove()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:18px">x</button>';
+  document.body.appendChild(b);
+}
+
+function calcFee(){
+  var a=parseFloat(document.getElementById('amount').value)||0;
+  document.getElementById('f-a').textContent=a.toFixed(2)+' USDT';
+  document.getElementById('f-f').textContent=(a*0.02).toFixed(2)+' USDT';
+  document.getElementById('f-s').textContent=(a*0.98).toFixed(2)+' USDT';
+}
+
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+
+function setSt(msg){
+  var el=document.getElementById('cst');
+  el.textContent=msg;
+  el.style.color=msg.startsWith('Done')?'#00ffaa':msg.startsWith('Error')?'#ff4444':'#888';
+}
+
+function toast(msg,type){
+  var t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:20px;right:20px;z-index:9999;padding:12px 16px;border-radius:8px;font-size:12px;max-width:320px;font-family:sans-serif';
+  if(type==='ok')t.style.cssText+='background:#0a1f0a;border:1px solid #00ffaa;color:#00ffaa';
+  else if(type==='err')t.style.cssText+='background:#1a0000;border:1px solid #ff4444;color:#ff4444';
+  else t.style.cssText+='background:#0a0a1a;border:1px solid #4d9fff;color:#4d9fff';
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(function(){t.remove();},5000);
+}
+
+async function createEscrow(){
+  var tw=window.tronWeb;
+  var addr=tw&&tw.defaultAddress&&tw.defaultAddress.base58;
+  if(!addr){toast('Connect wallet first','err');return;}
+  var seller=document.getElementById('seller').value.trim();
+  var amount=parseFloat(document.getElementById('amount').value);
+  if(!seller||!seller.startsWith('T')){toast('Enter valid seller address starting with T','err');return;}
+  if(!amount||amount<1){toast('Minimum 1 USDT','err');return;}
+  if(seller===addr){toast('Seller cannot be same as buyer','err');return;}
+  var units=Math.round(amount*1e6);
+  var btn=document.getElementById('cbtn');
+  btn.disabled=true;
+  var CONTRACT='TH1T3g29FFJYMJckutWnrUaDTDifV9vFYY';
+  var USDT='TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf';
+  try{
+    setSt('Step 1/3 - Approving USDT...');
+    var aTx=await tw.transactionBuilder.triggerSmartContract(USDT,'approve(address,uint256)',{feeLimit:50000000},[{type:'address',value:CONTRACT},{type:'uint256',value:units}],addr);
+    var aS=await tw.trx.sign(aTx.transaction);
+    var aR=await tw.trx.sendRawTransaction(aS);
+    if(!aR.result)throw new Error('Approval failed');
+    setSt('Waiting 30 seconds...');
+    await sleep(30000);
+    setSt('Step 2/3 - Creating escrow...');
+    var cTx=await tw.transactionBuilder.triggerSmartContract(CONTRACT,'createEscrow(address,uint256)',{feeLimit:200000000},[{type:'address',value:tw.address.toHex(seller)},{type:'uint256',value:units}],addr);
+    var cS=await tw.trx.sign(cTx.transaction);
+    var cR=await tw.trx.sendRawTransaction(cS);
+    if(!cR.result)throw new Error('Create failed');
+    setSt('Waiting 30 seconds...');
+    await sleep(30000);
+    setSt('Step 3/3 - Funding escrow...');
+    var info=await tw.trx.getTransactionInfo(cR.txid);
+    var eid='0x'+((info&&info.log&&info.log[0]&&info.log[0].topics&&info.log[0].topics[1])||cR.txid);
+    var fTx=await tw.transactionBuilder.triggerSmartContract(CONTRACT,'fundEscrow(bytes32)',{feeLimit:150000000},[{type:'bytes32',value:eid}],addr);
+    var fS=await tw.trx.sign(fTx.transaction);
+    var fR=await tw.trx.sendRawTransaction(fS);
+    if(!fR.result)throw new Error('Fund failed');
+    setSt('Done! '+amount+' USDT locked on blockchain!');
+    toast('Escrow created! '+amount+' USDT locked','ok');
+    document.getElementById('seller').value='';
+    document.getElementById('amount').value='';
+    document.getElementById('desc').value='';
+    calcFee();
+    await sleep(5000);
+    loadEscrows(tw,addr);
+  }catch(e){
+    setSt('Error: '+e.message);
+    toast('Error: '+e.message,'err');
+  }finally{btn.disabled=false;}
+}
+
+async function loadEscrows(tw,addr){
+  var tbody=document.getElementById('etbody');
+  var ecount=document.getElementById('ecount');
+  var CONTRACT='TH1T3g29FFJYMJckutWnrUaDTDifV9vFYY';
+  tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#555;padding:20px;font-size:11px">Loading...</td></tr>';
+  try{
+    var resp=await fetch('https://nile.trongrid.io/v1/contracts/'+CONTRACT+'/events?event_name=EscrowCreated&limit=50&order_by=block_timestamp,desc');
+    var data=await resp.json();
+    var all=data.data||[];
+    var mine=[];
+    for(var i=0;i<all.length;i++){
+      try{
+        var b=all[i].result&&all[i].result.buyer||'';
+        if(b.length===40)b='41'+b;
+        if(tw.address.fromHex(b)===addr)mine.push(all[i]);
+      }catch(err){}
+    }
+    if(!mine.length){
+      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#555;padding:24px;font-size:11px">No escrows yet. Create your first one above!</td></tr>';
+      ecount.textContent='0 escrows';
+      return;
+    }
+    ecount.textContent=mine.length+' escrow'+(mine.length!==1?'s':'');
+    tbody.innerHTML='';
+    var short=function(a){return a&&a.length>10?a.slice(0,6)+'...'+a.slice(-4):a;};
+    for(var j=0;j<mine.length;j++){
+      var ev=mine[j];
+      var txId=ev.transaction_id||'';
+      var amt=(Number(ev.result&&ev.result.amount||0)/1e6).toFixed(2);
+      var seller='-';
+      try{var s=ev.result&&ev.result.seller||'';if(s.length===40)s='41'+s;seller=tw.address.fromHex(s);}catch(err){}
+      var rawId=ev.result&&ev.result.id||txId;
+      if(!rawId.startsWith('0x'))rawId='0x'+rawId;
+      var sid='e'+j;
+      var link='https://nile.tronscan.org/#/transaction/'+txId;
+      var date=ev.block_timestamp?new Date(ev.block_timestamp).toLocaleDateString():'-';
+      var action='<button onclick="releasePayment(''+rawId+'',''+amt+'',''+sid+'')" id="rb-'+sid+'" style="background:rgba(0,255,170,.08);color:#00ffaa;border:1px solid rgba(0,255,170,.25);padding:6px 12px;border-radius:4px;font-size:10px;font-weight:800;cursor:pointer">RELEASE</button>';
+      var tr=document.createElement('tr');
+      tr.id='row-'+sid;
+      tr.innerHTML='<td style="font-family:monospace;font-size:10px"><a href="'+link+'" target="_blank" style="color:#4d9fff;text-decoration:none">'+short(txId)+'</a></td><td style="font-family:monospace;font-size:10px">'+short(seller)+'</td><td style="color:#00ffaa;font-weight:700">'+amt+' USDT</td><td id="st-'+sid+'"><span style="background:rgba(0,255,170,.1);color:#00ffaa;border:1px solid rgba(0,255,170,.3);display:inline-block;font-size:9px;padding:3px 8px;border-radius:3px;font-weight:700">FUNDED</span></td><td style="color:#555;font-size:11px">'+date+'</td><td>'+action+'</td>';
+      tbody.appendChild(tr);
+    }
+  }catch(e){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#ff4444;padding:24px;font-size:11px">Error: '+e.message+'</td></tr>';
+  }
+}
+
+async function releasePayment(escrowId,amount,sid){
+  var tw=window.tronWeb;
+  var addr=tw&&tw.defaultAddress&&tw.defaultAddress.base58;
+  if(!addr){toast('Connect wallet first','err');return;}
+  var CONTRACT='TH1T3g29FFJYMJckutWnrUaDTDifV9vFYY';
+  if(!confirm('Release '+amount+' USDT to seller?\nSeller gets: '+(parseFloat(amount)*0.98).toFixed(2)+' USDT\nFee: '+(parseFloat(amount)*0.02).toFixed(2)+' USDT\n\nThis cannot be undone!'))return;
+  var btn=document.getElementById('rb-'+sid);
+  var stEl=document.getElementById('st-'+sid);
+  if(btn){btn.disabled=true;btn.textContent='RELEASING...';}
+  if(stEl)stEl.innerHTML='<span style="background:rgba(255,200,0,.1);color:#ffcc00;border:1px solid rgba(255,200,0,.2);display:inline-block;font-size:9px;padding:3px 8px;border-radius:3px;font-weight:700">PENDING...</span>';
+  try{
+    var rTx=await tw.transactionBuilder.triggerSmartContract(CONTRACT,'release(bytes32)',{feeLimit:150000000},[{type:'bytes32',value:escrowId}],addr);
+    if(!rTx||!rTx.transaction)throw new Error('Failed to build transaction');
+    if(btn)btn.textContent='SIGN...';
+    var rS=await tw.trx.sign(rTx.transaction);
+    if(btn)btn.textContent='SENDING...';
+    var rR=await tw.trx.sendRawTransaction(rS);
+    if(!rR||!rR.result)throw new Error('Transaction failed');
+    if(btn)btn.textContent='CONFIRMING...';
+    var confirmed=false;
+    for(var i=0;i<20;i++){
+      await sleep(3000);
+      try{
+        var info=await tw.trx.getTransactionInfo(rR.txid);
+        if(info&&info.blockNumber){confirmed=true;break;}
+      }catch(err){}
+    }
+    if(!confirmed)throw new Error('Timeout — check Tronscan');
+    if(stEl)stEl.innerHTML='<span style="color:#00ffaa;font-size:10px;font-weight:700">RELEASED</span>';
+    if(btn)btn.outerHTML='<span style="color:#00ffaa;font-size:10px;font-weight:700">DONE</span>';
+    toast('Released! Seller got '+(parseFloat(amount)*0.98).toFixed(2)+' USDT','ok');
+    toast('Tronscan: https://nile.tronscan.org/#/transaction/'+rR.txid,'info');
+  }catch(e){
+    if(btn){btn.disabled=false;btn.textContent='RETRY';btn.style.color='#ff4444';}
+    if(stEl)stEl.innerHTML='<span style="color:#ff4444;font-size:10px;font-weight:700">FAILED</span>';
+    toast('Failed: '+e.message,'err');
+  }
+}
+
+window.onload=function(){
+  var saved=sessionStorage.getItem('gex_addr');
+  if(saved&&window.tronWeb&&window.tronWeb.defaultAddress&&window.tronWeb.defaultAddress.base58){
+    connectWallet();
+  }
+};
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#050a05;color:#fff;font-family:-apple-system,sans-serif;min-height:100vh}
@@ -11,19 +248,17 @@ nav{background:#000;border-bottom:1px solid rgba(0,255,170,.15);padding:0 28px;h
 .logo{font-size:18px;font-weight:800;color:#00ffaa;letter-spacing:2px;text-decoration:none}
 .logo span{color:#fff}
 .nav-links{display:flex;gap:4px}
-.nl{padding:6px 14px;border-radius:4px;font-size:11px;font-weight:700;text-decoration:none;color:#333;transition:all .2s}
+.nl{padding:6px 14px;border-radius:4px;font-size:11px;font-weight:700;text-decoration:none;color:#333}
 .nl:hover{color:#00ffaa}
 .nl.active{background:rgba(0,255,170,.08);color:#00ffaa}
 .wbtn{padding:9px 20px;border-radius:6px;font-size:11px;font-weight:800;cursor:pointer;border:none;letter-spacing:1px;transition:all .3s}
 .wbtn-off{background:#00ffaa;color:#000}
-.wbtn-off:hover{box-shadow:0 0 20px rgba(0,255,170,.4)}
 .wbtn-on{background:rgba(0,255,170,.1);color:#00ffaa;border:1px solid rgba(0,255,170,.3)}
 .container{max-width:1100px;margin:0 auto;padding:28px}
 .cwall{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:16px}
 .cwall h2{font-size:22px;font-weight:800;color:#00ffaa}
-.cwall p{font-size:13px;color:#333;max-width:340px;line-height:1.7}
-.cw-btn{background:#00ffaa;color:#000;border:none;padding:14px 36px;border-radius:6px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:1px;margin-top:8px}
-.cw-btn:hover{box-shadow:0 0 24px rgba(0,255,170,.5)}
+.cwall p{font-size:13px;color:#555;max-width:340px;line-height:1.7}
+.cw-btn{background:#00ffaa;color:#000;border:none;padding:14px 36px;border-radius:6px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:1px}
 .dcontent{display:none}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
 .stat{background:#000;border:1px solid #0d1a0d;border-radius:12px;padding:18px}
@@ -42,27 +277,14 @@ nav{background:#000;border-bottom:1px solid rgba(0,255,170,.15);padding:0 28px;h
 .fee-bar span{color:#00ffaa;font-weight:700;margin-left:4px}
 .cbtn{background:#00ffaa;color:#000;border:none;padding:12px 28px;border-radius:6px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:1px}
 .cbtn:disabled{opacity:.4;cursor:not-allowed}
-.cst{font-size:11px;margin-top:10px;min-height:16px}
+.cst{font-size:11px;margin-top:10px;min-height:16px;color:#888}
 .sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .sec-t{font-size:13px;font-weight:700;color:#00ffaa}
 .tbl-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
 th{font-size:9px;letter-spacing:2px;color:#1a1a1a;text-transform:uppercase;padding:10px 12px;border-bottom:1px solid #0d0d0d;text-align:left;white-space:nowrap}
 td{padding:12px;border-bottom:1px solid #080808;font-size:12px;color:#555}
-.mono{font-family:monospace;font-size:10px}
-.badge{display:inline-block;font-size:9px;padding:3px 8px;border-radius:3px;font-weight:700}
-.b-f{background:rgba(0,255,170,.1);color:#00ffaa;border:1px solid rgba(0,255,170,.3)}
-.b-a{background:rgba(77,159,255,.1);color:#4d9fff;border:1px solid rgba(77,159,255,.3)}
-.b-r{background:#080808;color:#00ffaa;border:1px solid #111}
-.rbtn{background:rgba(0,255,170,.08);color:#00ffaa;border:1px solid rgba(0,255,170,.25);padding:6px 12px;border-radius:4px;font-size:10px;font-weight:800;cursor:pointer}
-.rbtn:hover{background:rgba(0,255,170,.15)}
-.rbtn:disabled{opacity:.4;cursor:wait}
-.toast{position:fixed;bottom:20px;right:20px;z-index:9999;padding:12px 16px;border-radius:8px;font-size:12px;max-width:320px;animation:tin .3s ease}
-@keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.t-ok{background:#0a1f0a;border:1px solid rgba(0,255,170,.3);color:#00ffaa}
-.t-err{background:#1a0000;border:1px solid rgba(255,68,68,.3);color:#ff4444}
-.t-info{background:#0a0a1a;border:1px solid rgba(77,159,255,.3);color:#4d9fff}
-.scan{position:fixed;left:0;width:100%;height:1px;background:rgba(0,255,170,.15);z-index:500;animation:sd 8s linear infinite;pointer-events:none}
+.scan{position:fixed;left:0;width:100%;height:1px;background:rgba(0,255,170,.12);z-index:500;animation:sd 8s linear infinite;pointer-events:none}
 @keyframes sd{0%{top:0}100%{top:100%}}
 </style>
 </head>
@@ -76,7 +298,7 @@ td{padding:12px;border-bottom:1px solid #080808;font-size:12px;color:#555}
     <a class="nl" href="admin.html">Admin</a>
     <a class="nl" href="index.html">Site</a>
   </div>
-  <button class="wbtn wbtn-off" id="wbtn" id="connect-wall-btn">CONNECT WALLET</button>
+  <button class="wbtn wbtn-off" id="wbtn" onclick="connectWallet()">CONNECT WALLET</button>
 </nav>
 
 <div class="container">
@@ -84,8 +306,8 @@ td{padding:12px;border-bottom:1px solid #080808;font-size:12px;color:#555}
     <div style="font-size:48px">🔗</div>
     <h2>Connect your wallet</h2>
     <p>Connect your TronLink wallet to create and manage escrows on the Tron blockchain.</p>
-    <button class="cw-btn" id="connect-wall-btn">CONNECT TRONLINK</button>
-    <div style="font-size:11px;color:#1a1a1a">Need TronLink? <a href="https://www.tronlink.org" target="_blank" style="color:#00ffaa">Install free →</a></div>
+    <button class="cw-btn" id="cwbtn" onclick="connectWallet()">CONNECT TRONLINK</button>
+    <div style="font-size:11px;color:#1a1a1a">Need TronLink? <a href="https://www.tronlink.org" target="_blank" style="color:#00ffaa">Install free</a></div>
   </div>
 
   <div class="dcontent" id="dcontent">
@@ -93,14 +315,14 @@ td{padding:12px;border-bottom:1px solid #080808;font-size:12px;color:#555}
       <div class="stat"><div class="stat-l">TRX Balance</div><div class="stat-n" id="s-trx">0.00</div><div class="stat-s">Gas</div></div>
       <div class="stat"><div class="stat-l">USDT Balance</div><div class="stat-n" id="s-usdt">0.00</div><div class="stat-s">Available</div></div>
       <div class="stat"><div class="stat-l">Network</div><div class="stat-n" id="s-net" style="font-size:13px">-</div><div class="stat-s" id="s-nets">-</div></div>
-      <div class="stat"><div class="stat-l">Wallet</div><div class="stat-n mono" id="s-addr" style="font-size:12px">-</div><div class="stat-s">Connected</div></div>
+      <div class="stat"><div class="stat-l">Wallet</div><div class="stat-n" id="s-addr" style="font-family:monospace;font-size:12px">-</div><div class="stat-s">Connected</div></div>
     </div>
 
     <div class="card">
       <div class="card-t">+ Create New Escrow</div>
       <div class="fgrid">
         <div class="fg"><div class="fl">Seller Wallet Address</div><input class="fi" id="seller" placeholder="TXyz... seller address"></div>
-        <div class="fg"><div class="fl">Currency</div><select class="fi" style="background:#050a05;color:#fff"><option>USDT (TRC-20) — LIVE</option></select></div>
+        <div class="fg"><div class="fl">Currency</div><select class="fi" style="background:#050a05;color:#fff"><option>USDT (TRC-20) LIVE</option></select></div>
       </div>
       <div class="fgrid">
         <div class="fg"><div class="fl">Amount (USDT)</div><input class="fi" id="amount" type="number" placeholder="e.g. 100" oninput="calcFee()" min="1"></div>
@@ -111,7 +333,7 @@ td{padding:12px;border-bottom:1px solid #080808;font-size:12px;color:#555}
         Fee (2%):<span id="f-f">0 USDT</span>
         Seller gets:<span id="f-s">0 USDT</span>
       </div>
-      <button class="cbtn" id="cbtn">CREATE ESCROW ON TRON</button>
+      <button class="cbtn" id="cbtn" onclick="createEscrow()">CREATE ESCROW ON TRON</button>
       <div class="cst" id="cst"></div>
     </div>
 
@@ -123,314 +345,11 @@ td{padding:12px;border-bottom:1px solid #080808;font-size:12px;color:#555}
       <table>
         <tr><th>Transaction</th><th>Seller</th><th>Amount</th><th>Status</th><th>Date</th><th>Action</th></tr>
         <tbody id="etbody">
-          <tr><td colspan="6" style="text-align:center;color:#1a1a1a;padding:24px;font-size:11px">Connect wallet to view escrows</td></tr>
+          <tr><td colspan="6" style="text-align:center;color:#555;padding:24px;font-size:11px">Connect wallet to view escrows</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 </div>
-
-
-<script>
-const CONTRACT  = 'TH1T3g29FFJYMJckutWnrUaDTDifV9vFYY';
-const USDT_ADDR = 'TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf';
-let walletAddr = null;
-
-// ── Wallet connect ────────────────────────────────────────────────────
-async function handleWallet(){
-  console.log('handleWallet called');
-  if(walletAddr){ return; }
-  await connectWallet();
-}
-
-async function connectWallet(){
-  const btn = document.getElementById('wbtn');
-  btn.textContent = 'CONNECTING...';
-  btn.disabled = true;
-
-  if(!window.tronLink && !window.tronWeb){
-    alert('TronLink not found! Please install TronLink from tronlink.org and refresh the page.');
-    btn.textContent = 'CONNECT WALLET';
-    btn.disabled = false;
-    return;
-  }
-
-  try{
-    if(window.tronLink && window.tronLink.request){
-      await window.tronLink.request({method:'tron_requestAccounts'});
-    }
-
-    // Wait for tronWeb
-    let tw = null;
-    for(let i=0;i<20;i++){
-      await new Promise(r=>setTimeout(r,500));
-      if(window.tronWeb && window.tronWeb.defaultAddress && window.tronWeb.defaultAddress.base58){
-        tw = window.tronWeb;
-        break;
-      }
-    }
-
-    if(!tw){
-      alert('Could not connect. Please make sure TronLink is unlocked and try again.');
-      btn.textContent = 'CONNECT WALLET';
-      btn.disabled = false;
-      return;
-    }
-
-    walletAddr = tw.defaultAddress.base58;
-
-    // Detect network
-    const host = (tw.fullNode && tw.fullNode.host) || '';
-    const isNile = host.includes('nile');
-    const netName = isNile ? 'Nile Testnet' : host.includes('shasta') ? 'Shasta' : 'Tron Mainnet';
-
-    // Get TRX balance
-    let trx = '0.00';
-    try{
-      const raw = await tw.trx.getBalance(walletAddr);
-      trx = (Number(raw)/1e6).toFixed(2);
-    }catch{}
-
-    // Update UI
-    const short = walletAddr.slice(0,6)+'...'+walletAddr.slice(-4);
-    btn.textContent = short;
-    btn.className = 'wbtn wbtn-on';
-    btn.disabled = false;
-
-    document.getElementById('s-trx').textContent = trx + ' TRX';
-    document.getElementById('s-usdt').textContent = '0.00 USDT';
-    document.getElementById('s-addr').textContent = short;
-    document.getElementById('s-net').textContent = (isNile?'✅ ':'⚠️ ') + netName;
-    document.getElementById('s-net').style.color = isNile ? '#00ffaa' : '#ff4444';
-    document.getElementById('s-nets').textContent = isNile ? 'Correct network' : 'Switch to Nile Testnet!';
-
-    document.getElementById('cwall').style.display = 'none';
-    document.getElementById('dcontent').style.display = 'block';
-
-    if(!isNile){
-      showWrongNet(netName);
-    }
-
-    toast('Connected: ' + short, 'ok');
-    loadEscrows(tw, walletAddr);
-
-  }catch(e){
-    console.error(e);
-    alert('Error: ' + e.message);
-    btn.textContent = 'CONNECT WALLET';
-    btn.disabled = false;
-  }
-}
-
-function showWrongNet(name){
-  const b = document.createElement('div');
-  b.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#c0392b;color:#fff;padding:12px 24px;font-size:12px;font-weight:700;display:flex;justify-content:space-between;z-index:9999';
-  b.innerHTML = '<span>⚠️ Wrong Network: '+name+' — Switch to Nile Testnet in TronLink</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:18px">✕</button>';
-  document.body.appendChild(b);
-}
-
-// ── Fee calc ──────────────────────────────────────────────────────────
-function calcFee(){
-  const a = parseFloat(document.getElementById('amount').value)||0;
-  document.getElementById('f-a').textContent = a.toFixed(2)+' USDT';
-  document.getElementById('f-f').textContent = (a*.02).toFixed(2)+' USDT';
-  document.getElementById('f-s').textContent = (a*.98).toFixed(2)+' USDT';
-}
-
-// ── Create escrow ─────────────────────────────────────────────────────
-async function createEscrow(){
-  const tw = window.tronWeb;
-  if(!tw||!walletAddr){toast('Connect wallet first','err');return;}
-  const seller = document.getElementById('seller').value.trim();
-  const amount = parseFloat(document.getElementById('amount').value);
-  if(!seller||!seller.startsWith('T')){toast('Enter valid seller address','err');return;}
-  if(!amount||amount<1){toast('Minimum 1 USDT','err');return;}
-  if(seller===walletAddr){toast('Seller cannot be same as buyer','err');return;}
-  const units = Math.round(amount*1e6);
-  const btn = document.getElementById('cbtn');
-  const st = document.getElementById('cst');
-  btn.disabled=true;
-  try{
-    setSt(st,'Step 1/3 — Approving USDT...');
-    const aTx=await tw.transactionBuilder.triggerSmartContract(USDT_ADDR,'approve(address,uint256)',{feeLimit:50000000},[{type:'address',value:CONTRACT},{type:'uint256',value:units}],walletAddr);
-    const aS=await tw.trx.sign(aTx.transaction);
-    const aR=await tw.trx.sendRawTransaction(aS);
-    if(!aR.result)throw new Error('Approval failed');
-    setSt(st,'Waiting 30s for confirmation...');
-    await sleep(30000);
-    setSt(st,'Step 2/3 — Creating escrow...');
-    const cTx=await tw.transactionBuilder.triggerSmartContract(CONTRACT,'createEscrow(address,uint256)',{feeLimit:200000000},[{type:'address',value:tw.address.toHex(seller)},{type:'uint256',value:units}],walletAddr);
-    const cS=await tw.trx.sign(cTx.transaction);
-    const cR=await tw.trx.sendRawTransaction(cS);
-    if(!cR.result)throw new Error('Create failed');
-    setSt(st,'Waiting 30s...');
-    await sleep(30000);
-    setSt(st,'Step 3/3 — Funding escrow...');
-    const info=await tw.trx.getTransactionInfo(cR.txid);
-    const eid='0x'+((info&&info.log&&info.log[0]&&info.log[0].topics&&info.log[0].topics[1])||cR.txid);
-    const fTx=await tw.transactionBuilder.triggerSmartContract(CONTRACT,'fundEscrow(bytes32)',{feeLimit:150000000},[{type:'bytes32',value:eid}],walletAddr);
-    const fS=await tw.trx.sign(fTx.transaction);
-    const fR=await tw.trx.sendRawTransaction(fS);
-    if(!fR.result)throw new Error('Fund failed');
-    setSt(st,'Done! '+amount+' USDT locked!');
-    toast('Escrow created! '+amount+' USDT locked','ok');
-    document.getElementById('seller').value='';
-    document.getElementById('amount').value='';
-    document.getElementById('desc').value='';
-    calcFee();
-    await sleep(5000);
-    loadEscrows(tw,walletAddr);
-  }catch(e){
-    setSt(st,'Error: '+e.message);
-    toast('Error: '+e.message,'err');
-  }finally{btn.disabled=false;}
-}
-
-// ── Load escrows ──────────────────────────────────────────────────────
-async function loadEscrows(tw,addr){
-  const tbody=document.getElementById('etbody');
-  const ecount=document.getElementById('ecount');
-  tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#1a1a1a;padding:20px;font-size:11px">Loading...</td></tr>';
-  try{
-    const resp=await fetch('https://nile.trongrid.io/v1/contracts/'+CONTRACT+'/events?event_name=EscrowCreated&limit=50&order_by=block_timestamp,desc');
-    const data=await resp.json();
-    const all=data.data||[];
-    const mine=[];
-    for(const e of all){
-      try{
-        let b=e.result&&e.result.buyer||'';
-        if(b.length===40)b='41'+b;
-        if(tw.address.fromHex(b)===addr)mine.push(e);
-      }catch{}
-    }
-    if(!mine.length){
-      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#1a1a1a;padding:24px;font-size:11px">No escrows yet. Create your first one above!</td></tr>';
-      ecount.textContent='0 escrows';
-      return;
-    }
-    ecount.textContent=mine.length+' escrow'+(mine.length!==1?'s':'');
-    tbody.innerHTML='';
-    const short=a=>a&&a.length>10?a.slice(0,6)+'...'+a.slice(-4):a;
-    for(let i=0;i<mine.length;i++){
-      const ev=mine[i];
-      const txId=ev.transaction_id||'';
-      const amt=(Number(ev.result&&ev.result.amount||0)/1e6).toFixed(2);
-      let seller='-';
-      try{let s=ev.result&&ev.result.seller||'';if(s.length===40)s='41'+s;seller=tw.address.fromHex(s);}catch{}
-      let rawId=ev.result&&ev.result.id||txId;
-      if(!rawId.startsWith('0x'))rawId='0x'+rawId;
-      const sid='e'+i;
-      const link='https://nile.tronscan.org/#/transaction/'+txId;
-      const date=ev.block_timestamp?new Date(ev.block_timestamp).toLocaleDateString():'-';
-      let stateNum=1;
-      try{
-        const ec=await tw.contract([{inputs:[{name:'id',type:'bytes32'}],name:'getEscrow',outputs:[{name:'buyer',type:'address'},{name:'seller',type:'address'},{name:'amount',type:'uint256'},{name:'state',type:'uint8'}],type:'function'}],CONTRACT);
-        const d=await ec.getEscrow(rawId).call();
-        stateNum=Number(d[3]!==undefined?d[3]:d.state!==undefined?d.state:1);
-      }catch{}
-      const smap={0:'CREATED',1:'FUNDED',2:'ACTIVE',3:'COMPLETE',4:'RELEASED',5:'REFUNDED'};
-      const bmap={0:'b-f',1:'b-f',2:'b-a',3:'b-a',4:'b-r',5:'b-r'};
-      const slabel=smap[stateNum]||'FUNDED';
-      const bcls=bmap[stateNum]||'b-f';
-      let action='';
-      if(stateNum<=3){
-        action='<button class="rbtn" id="rb-'+sid+'" onclick="releasePayment(''+rawId+'',''+amt+'',''+seller+'',''+sid+'')">RELEASE →</button>';
-      }else if(stateNum===4){
-        action='<span style="color:#00ffaa;font-size:10px;font-weight:700">✓ RELEASED</span>';
-      }else{
-        action='<span style="color:#333;font-size:10px">DONE</span>';
-      }
-      const tr=document.createElement('tr');
-      tr.id='row-'+sid;
-      tr.innerHTML='<td class="mono"><a href="'+link+'" target="_blank" style="color:#4d9fff;text-decoration:none">'+short(txId)+'↗</a></td><td class="mono">'+short(seller)+'</td><td style="color:#00ffaa;font-weight:700">'+amt+' USDT</td><td id="st-'+sid+'"><span class="badge '+bcls+'">'+slabel+'</span></td><td style="color:#1a1a1a;font-size:11px">'+date+'</td><td>'+action+'</td>';
-      tbody.appendChild(tr);
-    }
-  }catch(e){
-    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#ff4444;padding:24px;font-size:11px">Error: '+e.message+'</td></tr>';
-  }
-}
-
-// ── Release payment ───────────────────────────────────────────────────
-async function releasePayment(escrowId,amount,sellerAddr,sid){
-  const tw=window.tronWeb;
-  if(!tw||!walletAddr){toast('Connect wallet first','err');return;}
-  const ok=window.confirm('Release '+amount+' USDT to seller?
-
-Seller gets: '+(parseFloat(amount)*.98).toFixed(2)+' USDT
-Fee: '+(parseFloat(amount)*.02).toFixed(2)+' USDT
-
-This cannot be undone!');
-  if(!ok)return;
-  const btn=document.getElementById('rb-'+sid);
-  const stEl=document.getElementById('st-'+sid);
-  if(btn){btn.disabled=true;btn.textContent='RELEASING...';}
-  if(stEl)stEl.innerHTML='<span class="badge" style="background:rgba(255,200,0,.1);color:#ffcc00;border:1px solid rgba(255,200,0,.2)">PENDING...</span>';
-  try{
-    const rTx=await tw.transactionBuilder.triggerSmartContract(CONTRACT,'release(bytes32)',{feeLimit:150000000},[{type:'bytes32',value:escrowId}],walletAddr);
-    if(!rTx||!rTx.transaction)throw new Error('Failed to build tx');
-    if(btn)btn.textContent='SIGN IN TRONLINK...';
-    const rS=await tw.trx.sign(rTx.transaction);
-    if(btn)btn.textContent='BROADCASTING...';
-    const rR=await tw.trx.sendRawTransaction(rS);
-    if(!rR||!rR.result)throw new Error('Broadcast failed');
-    if(btn)btn.textContent='CONFIRMING...';
-    if(stEl)stEl.innerHTML='<span class="badge" style="background:rgba(255,200,0,.1);color:#ffcc00;border:1px solid rgba(255,200,0,.2)">CONFIRMING...</span>';
-    let confirmed=false;
-    for(let i=0;i<20;i++){
-      await sleep(3000);
-      try{
-        const info=await tw.trx.getTransactionInfo(rR.txid);
-        if(info&&info.blockNumber){
-          if(info.receipt&&info.receipt.result==='REVERT')throw new Error('Reverted on blockchain');
-          confirmed=true;break;
-        }
-      }catch(e){if(e.message&&e.message.includes('Revert'))throw e;}
-    }
-    if(!confirmed)throw new Error('Timeout — check Tronscan');
-    if(stEl)stEl.innerHTML='<span class="badge b-r">RELEASED</span>';
-    if(btn)btn.outerHTML='<span style="color:#00ffaa;font-size:10px;font-weight:700">✓ RELEASED</span>';
-    toast('Payment released! Seller received '+(parseFloat(amount)*.98).toFixed(2)+' USDT','ok');
-    const t2=document.createElement('div');
-    t2.className='toast t-info';
-    t2.innerHTML='<a href="https://nile.tronscan.org/#/transaction/'+rR.txid+'" target="_blank" style="color:#4d9fff">View on Tronscan ↗</a>';
-    document.body.appendChild(t2);
-    setTimeout(()=>t2.remove(),8000);
-  }catch(e){
-    if(btn){btn.disabled=false;btn.textContent='RETRY →';btn.style.color='#ff4444';}
-    if(stEl)stEl.innerHTML='<span class="badge" style="background:rgba(255,68,68,.1);color:#ff4444;border:1px solid rgba(255,68,68,.3)">FAILED</span>';
-    toast('Release failed: '+e.message,'err');
-  }
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────
-function setSt(el,msg){el.textContent=msg;el.style.color=msg.startsWith('Done')?'#00ffaa':msg.startsWith('Error')?'#ff4444':'#555';}
-function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-function toast(msg,type){const t=document.createElement('div');t.className='toast t-'+type;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),5000);}
-
-// Auto-reconnect if previously connected
-window.addEventListener('load',async()=>{
-  const saved=sessionStorage.getItem('gex_addr');
-  if(saved&&window.tronWeb&&window.tronWeb.defaultAddress&&window.tronWeb.defaultAddress.base58){
-    await connectWallet();
-  }
-});
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  var wbtn = document.getElementById('wbtn');
-  var cwbtn = document.getElementById('connect-wall-btn');
-  var cbtn = document.getElementById('cbtn');
-  if(wbtn) wbtn.addEventListener('click', function(){ connectWallet(); });
-  if(cwbtn) cwbtn.addEventListener('click', function(){ connectWallet(); });
-  if(cbtn) cbtn.addEventListener('click', function(){ createEscrow(); });
-  
-  // Auto reconnect
-  var saved = sessionStorage.getItem('gex_addr');
-  if(saved && window.tronWeb && window.tronWeb.defaultAddress && window.tronWeb.defaultAddress.base58){
-    connectWallet();
-  }
-});
-</script>
 </body>
 </html>
